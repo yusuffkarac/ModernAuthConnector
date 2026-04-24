@@ -155,8 +155,8 @@ html, body {
   border-bottom: 1px solid var(--border-dark);
   display: flex;
   align-items: center;
-  padding: 0 8px 0 calc(var(--rail-width) + var(--sidebar-width) + 8px);
-  gap: 2px;
+  padding: 0 6px 0 calc(var(--rail-width) + var(--sidebar-width) + 6px);
+  gap: 1px;
   position: fixed;
   top: var(--topbar-height);
   left: 0; right: 0;
@@ -169,7 +169,7 @@ html, body {
   background: transparent;
   color: var(--text-primary);
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 4px 7px;
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
@@ -179,6 +179,7 @@ html, body {
   height: 32px;
   font-family: inherit;
   transition: background 0.1s;
+  flex-shrink: 0;
 }
 
 .ribbon-btn:hover { background: var(--bg-hover); }
@@ -188,25 +189,79 @@ html, body {
   color: #fff;
   font-weight: 600;
   padding: 4px 14px;
+  border-radius: 4px;
 }
 
 .ribbon-btn.primary:hover { background: var(--blue-dark); }
 .ribbon-btn .material-symbols-outlined { font-size: 16px !important; }
 
+/* Split button group (ana düğme + açılır ok birlikte) */
+.ribbon-split-grp {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.ribbon-split-grp:hover {
+  background: var(--bg-hover);
+}
+
+.ribbon-split-grp .ribbon-btn:hover {
+  background: rgba(0,0,0,0.07);
+}
+
+.ribbon-split-main {
+  border-radius: 4px 0 0 4px;
+  padding-right: 4px;
+  position: relative;
+}
+
+.ribbon-split-grp:hover .ribbon-split-main::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: var(--border-dark);
+}
+
+.ribbon-split-drop {
+  border-radius: 0 4px 4px 0;
+  padding: 4px 3px;
+  color: var(--text-secondary);
+}
+
+.ribbon-split-drop .material-symbols-outlined { font-size: 12px !important; }
+
+/* İkon-only ribbon düğmesi */
+.ribbon-icon-only {
+  padding: 4px 7px;
+}
+
 .ribbon-sep {
   width: 1px;
   height: 20px;
   background: var(--border-dark);
-  margin: 0 4px;
+  margin: 0 3px;
   flex-shrink: 0;
+}
+
+/* Sağ taraf eylem grubu */
+.ribbon-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding-right: 4px;
 }
 
 .ribbon-folder-form {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-left: auto;
-  padding-right: 8px;
+  padding-left: 4px;
 }
 
 .ribbon-folder-select {

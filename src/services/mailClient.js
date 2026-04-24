@@ -96,6 +96,7 @@ class MailClientService {
       host: this.settings.endpoint,
       port: this.settings.port,
       secure: true,
+      logger: false,
       auth: {
         user: this.settings.username,
         accessToken: token,
@@ -130,21 +131,23 @@ class MailClientService {
       const lock = await client.getMailboxLock(folder, { readOnly: true });
       try {
         const exists = client.mailbox.exists || 0;
-        const start = Math.max(1, exists - limit + 1);
         const summary = [];
 
-        for await (const msg of client.fetch(
-          `${start}:${exists || 1}`,
-          { uid: true, envelope: true, flags: true },
-          { uid: false }
-        )) {
-          summary.push({
-            id: String(msg.seq),
-            date: msg.envelope?.date ? new Date(msg.envelope.date).toString() : "",
-            from: msg.envelope?.from?.[0]?.address || "-",
-            subject: msg.envelope?.subject || "-",
-            flags: formatFlags(msg.flags),
-          });
+        if (exists > 0) {
+          const start = Math.max(1, exists - limit + 1);
+          for await (const msg of client.fetch(
+            `${start}:${exists}`,
+            { uid: true, envelope: true, flags: true },
+            { uid: false }
+          )) {
+            summary.push({
+              id: String(msg.seq),
+              date: msg.envelope?.date ? new Date(msg.envelope.date).toString() : "",
+              from: msg.envelope?.from?.[0]?.address || "-",
+              subject: msg.envelope?.subject || "-",
+              flags: formatFlags(msg.flags),
+            });
+          }
         }
 
         summary.sort((a, b) => Number.parseInt(b.id, 10) - Number.parseInt(a.id, 10));
@@ -209,22 +212,24 @@ class MailClientService {
       const lock = await client.getMailboxLock(selectedFolder, { readOnly: true });
       try {
         const exists = client.mailbox.exists || 0;
-        const start = Math.max(1, exists - limit + 1);
         const messages = [];
 
-        for await (const msg of client.fetch(
-          `${start}:${exists || 1}`,
-          { uid: true, envelope: true, flags: true },
-          { uid: false }
-        )) {
-          messages.push({
-            id: String(msg.seq),
-            uid: String(msg.uid || ""),
-            date: msg.envelope?.date ? new Date(msg.envelope.date).toString() : "",
-            from: msg.envelope?.from?.[0]?.address || "-",
-            subject: msg.envelope?.subject || "-",
-            flags: formatFlags(msg.flags),
-          });
+        if (exists > 0) {
+          const start = Math.max(1, exists - limit + 1);
+          for await (const msg of client.fetch(
+            `${start}:${exists}`,
+            { uid: true, envelope: true, flags: true },
+            { uid: false }
+          )) {
+            messages.push({
+              id: String(msg.seq),
+              uid: String(msg.uid || ""),
+              date: msg.envelope?.date ? new Date(msg.envelope.date).toString() : "",
+              from: msg.envelope?.from?.[0]?.address || "-",
+              subject: msg.envelope?.subject || "-",
+              flags: formatFlags(msg.flags),
+            });
+          }
         }
 
         messages.sort((a, b) => Number.parseInt(b.uid, 10) - Number.parseInt(a.uid, 10));
