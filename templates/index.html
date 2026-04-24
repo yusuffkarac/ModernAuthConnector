@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mailbox Viewer</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Outlook Tarzi Mailbox</div>
+    <form method="GET" action="/" class="folder-select">
+      <label for="folder">Klasor</label>
+      <select id="folder" name="folder">{{options}}</select>
+      <button type="submit">Ac</button>
+    </form>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <h2>Klasorler</h2>
+      <nav class="folder-list">
+        {{folder_links}}
+      </nav>
+      <p class="note">Salt okunur mod aktif.</p>
+    </aside>
+
+    <section class="content">
+      <div class="content-head">
+        <h1>{{selected_folder}}</h1>
+        <span class="badge">Toplam {{total}}</span>
+      </div>
+      {{error_block}}
+      <section class="mail-grid">
+        <section class="mail-list">
+          {{rows}}
+        </section>
+        <section class="preview-panel">
+          {{detail_block}}
+        </section>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
