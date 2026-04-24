@@ -1,6 +1,12 @@
 (() => {
   const STORAGE_KEY = "rf_sidebar_collapsed";
 
+  // FOUC önlemi: Sayfa yüklenirken sidebar'ı preload moduna al
+  const sidebar = document.querySelector(".sidebar");
+  if (sidebar) {
+    sidebar.classList.add("is-preload");
+  }
+
   function getCollapsedSections() {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
@@ -50,6 +56,9 @@
   function init() {
     const headers = document.querySelectorAll(".sidebar-section-header");
     const collapsed = getCollapsedSections();
+    
+    // FOUC önlemi: Tüm işlemler tamamlandıktan sonra preload class'ını kaldır
+    const sidebar = document.querySelector(".sidebar");
 
     headers.forEach((header) => {
       const section = header.closest(".sidebar-section");
@@ -76,6 +85,18 @@
         toggleSection(header);
       });
     });
+    
+    // FOUC önlemi: Tüm işlemler tamamlandıktan sonra class'ları güncelle
+    // Böylece sidebar içeriği tamamen hazır olduktan sonra görünür olacak
+    if (sidebar) {
+      // Bir frame bekle ki browser layout'u tamamlasın
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          sidebar.classList.remove("is-preload");
+          sidebar.classList.add("is-ready");
+        });
+      });
+    }
   }
 
   function runWhenReady() {

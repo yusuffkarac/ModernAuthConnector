@@ -218,9 +218,9 @@ function renderPage({
           : "";
       const icon = folderIcon(folder);
       return `<div class="folder-item-wrapper${active}" data-folder="${escapeHtml(folder)}">
-        <a class="folder-item${active}" href="${href}">
-          <span class="material-symbols-outlined folder-icon">${icon}</span>
-          <span class="folder-name">${escapeHtml(folder)}</span>
+        <a class="folder-item${active}" href="${href}" style="display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;padding:8px 14px 8px 16px;text-decoration:none;color:inherit;border-radius:4px;margin:1px 6px;border-left:3px solid transparent;white-space:nowrap;">
+          <span class="material-symbols-outlined folder-icon" style="font-size:16px;color:#7B9DC8;flex-shrink:0;">${icon}</span>
+          <span class="folder-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">${escapeHtml(folder)}</span>
           ${count}
         </a>
         <button type="button" class="folder-favorite-btn" data-folder="${escapeHtml(folder)}" title="Favorilere ekle/çıkar">
@@ -377,7 +377,7 @@ function renderPage({
     </nav>
 
     <!-- Sidebar (Klasör ağacı) -->
-    <aside class="sidebar">
+    <aside class="sidebar" style="contain: layout style; visibility: visible;">
       <!-- Sidebar üst "Yeni posta" butonu — Outlook tarzı -->
       <div class="sidebar-top-btn-area">
         <button class="sidebar-new-mail-btn">
@@ -403,14 +403,14 @@ function renderPage({
           <span>Sık Kullanılanlar</span>
           <span class="material-symbols-outlined sidebar-chevron">expand_more</span>
         </div>
-        <a class="folder-item${selectedFolder === "INBOX" ? " active" : ""}" href="/?folder=INBOX">
-          <span class="material-symbols-outlined folder-icon">inbox</span>
-          <span class="folder-name">Gelen Kutusu</span>
+        <a class="folder-item${selectedFolder === "INBOX" ? " active" : ""}" href="/?folder=INBOX" style="display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;padding:8px 14px 8px 16px;text-decoration:none;color:inherit;border-radius:4px;margin:1px 6px;border-left:3px solid transparent;white-space:nowrap;">
+          <span class="material-symbols-outlined folder-icon" style="font-size:16px;color:#7B9DC8;flex-shrink:0;">inbox</span>
+          <span class="folder-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">Gelen Kutusu</span>
           ${selectedFolder === "INBOX" ? `<span class="folder-count">${escapeHtml(total)}</span>` : ""}
         </a>
-        <a class="folder-item${selectedFolder === "Archive" ? " active" : ""}" href="/?folder=Archive">
-          <span class="material-symbols-outlined folder-icon">archive</span>
-          <span class="folder-name">Arşiv</span>
+        <a class="folder-item${selectedFolder === "Archive" ? " active" : ""}" href="/?folder=Archive" style="display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;padding:8px 14px 8px 16px;text-decoration:none;color:inherit;border-radius:4px;margin:1px 6px;border-left:3px solid transparent;white-space:nowrap;">
+          <span class="material-symbols-outlined folder-icon" style="font-size:16px;color:#7B9DC8;flex-shrink:0;">archive</span>
+          <span class="folder-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">Arşiv</span>
           ${selectedFolder === "Archive" ? `<span class="folder-count">${escapeHtml(total)}</span>` : ""}
         </a>
       </div>
@@ -425,9 +425,9 @@ function renderPage({
       </div>
 
       <div class="sidebar-bottom">
-        <a href="#" class="folder-item sidebar-groups-link">
-          <span class="material-symbols-outlined folder-icon" style="color:#0078D4">diversity_3</span>
-          <span class="folder-name" style="color:#0078D4">Gruplara Git</span>
+        <a href="#" class="folder-item sidebar-groups-link" style="display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;padding:8px 14px 8px 16px;text-decoration:none;color:#0078D4;border-radius:4px;margin:1px 6px;border-left:3px solid transparent;white-space:nowrap;">
+          <span class="material-symbols-outlined folder-icon" style="color:#0078D4;font-size:16px;flex-shrink:0;">diversity_3</span>
+          <span class="folder-name" style="color:#0078D4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">Gruplara Git</span>
         </a>
       </div>
     </aside>
@@ -564,12 +564,25 @@ function renderPage({
 </html>`;
 }
 
-function renderLoginPage({ error = "", next = "/" }) {
+function renderLoginPage({ error = "", next = "/", query = {} }) {
   const safeNext = String(next || "/").trim() || "/";
   const nextValue = safeNext.startsWith("/") && !safeNext.startsWith("//") ? safeNext : "/";
   const errorBlock = error
     ? `<div class="ms-login-error" role="alert"><span class="material-symbols-outlined">error_outline</span><span>${escapeHtml(error)}</span></div>`
     : "";
+
+  // URL parametrelerinden değerleri al (query objesi veya doğrudan parametreler)
+  const getParam = (key, defaultValue = "") => {
+    const value = query && query[key] ? String(query[key]).trim() : "";
+    return value || defaultValue;
+  };
+
+  const prefillEndpoint = getParam("endpoint", "");
+  const prefillUsername = getParam("username", "");
+  const prefillPort = getParam("port", "993");
+  const prefillOauthAuthority = getParam("oauthAuthority", "");
+  const prefillClientId = getParam("clientId", "");
+  const prefillClientSecret = getParam("clientSecret", "");
 
   return `<!doctype html>
 <html lang="tr">
@@ -620,27 +633,27 @@ function renderLoginPage({ error = "", next = "/" }) {
         <input type="hidden" name="next" value="${escapeHtml(nextValue)}" />
         <label class="ms-field">
           <span class="ms-field-label">IMAP sunucusu</span>
-          <input class="ms-field-input" name="endpoint" type="text" required placeholder="outlook.office365.com" />
+          <input class="ms-field-input" name="endpoint" type="text" required placeholder="outlook.office365.com" value="${escapeHtml(prefillEndpoint)}" />
         </label>
         <label class="ms-field">
           <span class="ms-field-label">E-posta veya kullanıcı adı</span>
-          <input class="ms-field-input" name="username" type="text" required placeholder="ornek@kurum.onmicrosoft.com" autocomplete="username" />
+          <input class="ms-field-input" name="username" type="text" required placeholder="ornek@kurum.onmicrosoft.com" autocomplete="username" value="${escapeHtml(prefillUsername)}" />
         </label>
         <label class="ms-field">
           <span class="ms-field-label">IMAP bağlantı noktası</span>
-          <input class="ms-field-input" name="port" type="number" min="1" max="65535" value="993" />
+          <input class="ms-field-input" name="port" type="number" min="1" max="65535" value="${escapeHtml(prefillPort || '993')}" />
         </label>
         <label class="ms-field">
           <span class="ms-field-label">OAuth yetkili sunucu (authority)</span>
-          <input class="ms-field-input" name="oauthAuthority" type="url" required placeholder="https://login.microsoftonline.com/kiracı-kimligi" />
+          <input class="ms-field-input" name="oauthAuthority" type="url" required placeholder="https://login.microsoftonline.com/kiracı-kimligi" value="${escapeHtml(prefillOauthAuthority)}" />
         </label>
         <label class="ms-field">
           <span class="ms-field-label">Uygulama (istemci) kimliği</span>
-          <input class="ms-field-input" name="clientId" type="text" required autocomplete="off" spellcheck="false" />
+          <input class="ms-field-input" name="clientId" type="text" required autocomplete="off" spellcheck="false" value="${escapeHtml(prefillClientId)}" />
         </label>
         <label class="ms-field">
           <span class="ms-field-label">İstemci parolası</span>
-          <input class="ms-field-input" name="clientSecret" type="password" required autocomplete="current-password" />
+          <input class="ms-field-input" name="clientSecret" type="password" required autocomplete="current-password" value="${escapeHtml(prefillClientSecret)}" />
         </label>
         <p class="ms-login-hint">
           <a class="ms-link" href="https://learn.microsoft.com/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth" target="_blank" rel="noopener noreferrer">IMAP ve OAuth yapılandırması</a>
@@ -648,6 +661,13 @@ function renderLoginPage({ error = "", next = "/" }) {
         </p>
         <div class="ms-login-actions">
           <button type="submit" class="ms-btn-primary">İleri</button>
+        </div>
+        <div class="ms-share-link-row">
+          <button type="button" class="ms-btn-link-share" id="share-link-btn" title="Form bilgilerini içeren paylaşılabilir link oluştur">
+            <span class="material-symbols-outlined">content_copy</span>
+            <span>Linki Kopyala</span>
+          </button>
+          <span class="ms-share-status" id="share-status" role="status" aria-live="polite"></span>
         </div>
       </form>
     </div>
@@ -752,6 +772,23 @@ function renderLoginPage({ error = "", next = "/" }) {
     set("clientSecret", r.clientSecret);
   }
 
+  // URL query parametrelerini parse et
+  function getUrlParams() {
+    var params = {};
+    var search = window.location.search;
+    if (!search || search.length < 2) return params;
+    var pairs = search.substring(1).split("&");
+    for (var i = 0; i < pairs.length; i++) {
+      var pair = pairs[i].split("=");
+      if (pair.length >= 2) {
+        var key = decodeURIComponent(pair[0]);
+        var value = decodeURIComponent(pair.slice(1).join("="));
+        params[key] = value;
+      }
+    }
+    return params;
+  }
+
   function runApply() {
     var ta = document.getElementById("csv-paste-area");
     var form = document.getElementById("ms-login-form");
@@ -786,6 +823,100 @@ function renderLoginPage({ error = "", next = "/" }) {
       });
     }
     if (toggleBtn) toggleBtn.addEventListener("click", toggleCsvBlock);
+
+    // URL parametrelerinden formu doldur (eğer varsa)
+    var urlParams = getUrlParams();
+    var form = document.getElementById("ms-login-form");
+    var hasUrlParams = urlParams.endpoint || urlParams.username || urlParams.clientId || urlParams.oauthAuthority;
+    if (form && hasUrlParams) {
+      // Eğer input zaten server-side doldurulmadıysa (value boşsa)
+      function fillIfEmpty(name, value) {
+        var el = form.querySelector('[name="' + name + '"]');
+        if (el && !el.value && value) {
+          el.value = value;
+        }
+      }
+      fillIfEmpty("endpoint", urlParams.endpoint);
+      fillIfEmpty("username", urlParams.username);
+      fillIfEmpty("port", urlParams.port || "993");
+      fillIfEmpty("oauthAuthority", urlParams.oauthAuthority);
+      fillIfEmpty("clientId", urlParams.clientId);
+      fillIfEmpty("clientSecret", urlParams.clientSecret);
+    }
+
+    // Link paylaşma fonksiyonu
+    var shareBtn = document.getElementById("share-link-btn");
+    var shareStatus = document.getElementById("share-status");
+
+    function generateShareLink() {
+      if (!form) return "";
+      var baseUrl = window.location.origin + "/login";
+      var params = new URLSearchParams();
+
+      function addParam(name) {
+        var el = form.querySelector('[name="' + name + '"]');
+        if (el && el.value && el.value.trim()) {
+          params.set(name, el.value.trim());
+        }
+      }
+
+      addParam("endpoint");
+      addParam("username");
+      addParam("port");
+      addParam("oauthAuthority");
+      addParam("clientId");
+      addParam("clientSecret");
+
+      var queryString = params.toString();
+      return queryString ? (baseUrl + "?" + queryString) : baseUrl;
+    }
+
+    function copyToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      // Fallback for older browsers
+      var textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      var success = false;
+      try {
+        success = document.execCommand("copy");
+      } catch (e) {
+        success = false;
+      }
+      document.body.removeChild(textarea);
+      return success ? Promise.resolve() : Promise.reject(new Error("Kopyalama başarısız"));
+    }
+
+    function showStatus(message, isError) {
+      if (!shareStatus) return;
+      shareStatus.textContent = message;
+      shareStatus.classList.toggle("is-error", !!isError);
+      shareStatus.classList.toggle("is-success", !isError);
+      setTimeout(function () {
+        shareStatus.textContent = "";
+        shareStatus.classList.remove("is-error", "is-success");
+      }, 3000);
+    }
+
+    if (shareBtn) {
+      shareBtn.addEventListener("click", function () {
+        var link = generateShareLink();
+        if (!link || link === window.location.origin + "/login") {
+          showStatus("Önce form alanlarını doldurun", true);
+          return;
+        }
+        copyToClipboard(link).then(function () {
+          showStatus("Link kopyalandı!", false);
+        }).catch(function () {
+          showStatus("Kopyalama başarısız", true);
+        });
+      });
+    }
   });
 })();
   </script>

@@ -401,6 +401,38 @@ html, body {
   flex-direction: column;
   overflow: hidden;
   flex-shrink: 0;
+  /* FOUC önlemi: Sayfa ilk yüklenirken animasyonları devre dışı bırak */
+}
+
+/* Sidebar açılış animasyonları - JS hazır olana kadar devre dışı */
+.sidebar:not(.is-ready) .sidebar-section .folder-list {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* FOUC önlemi: Sayfa ilk yüklenirken metin taşmalarını engelle */
+.sidebar.is-preload .folder-name {
+  /* Preload sırasında metinleri overflow edilemez yap 
+     böylece truncate olmazlar ama düzgün görünürler */
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+}
+
+/* Preload sırasında folder-item'ların düzgün görünmesini sağla */
+.sidebar.is-preload .folder-item {
+  /* Preload sırasında grid layout'u zorla uygula */
+  display: grid !important;
+  grid-template-columns: 18px 1fr auto !important;
+}
+
+/* Preload sırasında section başlıklarının düzgün görünmesini sağla */
+.sidebar.is-preload .sidebar-section-header span:first-child {
+  /* Başlık metinlerinin taşmasını engelle */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
 }
 
 /* Sidebar'ın tepesindeki "Yeni posta" butonu */
@@ -647,11 +679,15 @@ html, body {
 }
 
 /* Sürükle-bırak stilleri */
-.folder-item-wrapper {
+/* Sürükle-bırak stilleri - Favoriler ve Tüm Klasörler */
+.sidebar-section .folder-item-wrapper,
+.sidebar-section-grow .folder-item-wrapper {
   cursor: grab;
+  position: relative;
 }
 
-.folder-item-wrapper:active {
+.sidebar-section .folder-item-wrapper:active,
+.sidebar-section-grow .folder-item-wrapper:active {
   cursor: grabbing;
 }
 
@@ -664,6 +700,30 @@ html, body {
 
 .folder-item-wrapper .folder-item {
   cursor: pointer;
+}
+
+/* Sürüklenebilir göstergesi */
+.sidebar-section-grow .folder-item-wrapper::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 12px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--text-muted) 0px,
+    var(--text-muted) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.sidebar-section-grow .folder-item-wrapper:hover::before {
+  opacity: 0.4;
 }
 
 /* Açılır/kapanır sidebar bölümleri */
@@ -1722,6 +1782,7 @@ body.is-resizing * {
   background: #f2f2f2;
   color: #1b1b1b;
   position: relative;
+  overflow-y: auto;
 }
 
 .ms-login-bg {
@@ -1745,9 +1806,10 @@ body.is-resizing * {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 32px 16px 48px;
   gap: 16px;
+  overflow-y: auto;
 }
 
 .ms-login-card {
@@ -1757,6 +1819,8 @@ body.is-resizing * {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2), 0 0 1px rgba(0, 0, 0, 0.08);
   padding: 44px 44px 36px;
   box-sizing: border-box;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
 }
 
 .ms-login-brand {
@@ -2075,7 +2139,70 @@ body.is-resizing * {
   flex: 1;
 }
 
+/* Link paylaşma butonu */
+.ms-share-link-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #e1dfdd;
+}
+
+.ms-btn-link-share {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #605e5c;
+  background: transparent;
+  border: 1px solid #e1dfdd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ms-btn-link-share:hover {
+  color: #323130;
+  background: #f3f2f1;
+  border-color: #c8c6c4;
+}
+
+.ms-btn-link-share:focus-visible {
+  outline: 2px solid #0067b8;
+  outline-offset: 2px;
+}
+
+.ms-btn-link-share .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.ms-share-status {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.ms-share-status.is-success {
+  color: #107c10;
+  opacity: 1;
+}
+
+.ms-share-status.is-error {
+  color: #d13438;
+  opacity: 1;
+}
+
 @media (max-width: 480px) {
+  .ms-login-shell {
+    padding: 16px 12px 24px;
+    justify-content: flex-start;
+  }
+
   .ms-login-card,
   .ms-login-card-foot {
     padding-left: 24px;
@@ -2083,7 +2210,8 @@ body.is-resizing * {
   }
 
   .ms-login-card {
-    padding-top: 32px;
-    padding-bottom: 28px;
+    padding-top: 24px;
+    padding-bottom: 24px;
+    max-height: calc(100vh - 80px);
   }
 }

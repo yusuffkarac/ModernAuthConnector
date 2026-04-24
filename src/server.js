@@ -72,7 +72,16 @@ async function bootstrap() {
 
     const error = String(req.query.error || "").trim();
     const next = String(req.query.next || "/").trim() || "/";
-    return res.status(200).send(renderLoginPage({ error, next }));
+    // Form alanları için query parametrelerini topla
+    const query = {
+      endpoint: String(req.query.endpoint || "").trim(),
+      username: String(req.query.username || "").trim(),
+      port: String(req.query.port || "").trim(),
+      oauthAuthority: String(req.query.oauthAuthority || "").trim(),
+      clientId: String(req.query.clientId || "").trim(),
+      clientSecret: String(req.query.clientSecret || "").trim(),
+    };
+    return res.status(200).send(renderLoginPage({ error, next, query }));
   });
 
   app.post("/login", async (req, res) => {
@@ -108,8 +117,13 @@ async function bootstrap() {
     if (sid) {
       clearMailClientForSessionId(sid);
     }
-    req.session = null;
-    res.redirect(302, "/login");
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Logout hatasi:", err);
+      }
+      res.clearCookie("mac.sid");
+      res.redirect(302, "/login");
+    });
   });
 
   app.get("/", requireMailSession, async (req, res) => {

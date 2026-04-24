@@ -1,5 +1,6 @@
 (() => {
   const STORAGE_KEY = "rf_favorite_folders";
+  const ORDER_KEY = "rf_folder_order";
 
   function getFavorites() {
     try {
@@ -16,6 +17,41 @@
     } catch (e) {
       console.error("[favorites] Kaydetme hatası:", e);
     }
+  }
+
+  function getFolderOrder() {
+    try {
+      const data = localStorage.getItem(ORDER_KEY);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveFolderOrder(order) {
+    try {
+      localStorage.setItem(ORDER_KEY, JSON.stringify(order));
+    } catch (e) {
+      console.error("[folder-order] Kaydetme hatası:", e);
+    }
+  }
+
+  function applyFolderOrder(folders) {
+    const savedOrder = getFolderOrder();
+    if (!savedOrder || !Array.isArray(savedOrder)) return folders;
+    
+    const ordered = [];
+    const remaining = [...folders];
+    
+    savedOrder.forEach(folder => {
+      const idx = remaining.indexOf(folder);
+      if (idx > -1) {
+        ordered.push(folder);
+        remaining.splice(idx, 1);
+      }
+    });
+    
+    return [...ordered, ...remaining];
   }
 
   function isFavorite(folderName) {
@@ -127,9 +163,9 @@
         const icon = folderIcon(folder);
         return `
           <div class="folder-item-wrapper${isActive ? " active" : ""}" data-folder="${escapeHtml(folder)}">
-            <a class="folder-item${isActive ? " active" : ""}" href="/?folder=${encodeURIComponent(folder)}">
-              <span class="material-symbols-outlined folder-icon">${icon}</span>
-              <span class="folder-name">${escapeHtml(folder)}</span>
+            <a class="folder-item${isActive ? " active" : ""}" href="/?folder=${encodeURIComponent(folder)}" style="display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;padding:8px 14px 8px 16px;text-decoration:none;color:inherit;border-radius:4px;margin:1px 6px;border-left:3px solid transparent;white-space:nowrap;">
+              <span class="material-symbols-outlined folder-icon" style="font-size:16px;color:#7B9DC8;flex-shrink:0;">${icon}</span>
+              <span class="folder-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">${escapeHtml(folder)}</span>
             </a>
             <button type="button" class="folder-favorite-btn is-favorite" data-folder="${escapeHtml(folder)}" title="Favorilerden çıkar">
               <span class="material-symbols-outlined">star</span>
@@ -144,14 +180,14 @@
     favoritesList.querySelectorAll(".folder-favorite-btn").forEach((btn) => {
       btn.addEventListener("click", handleFavoriteClick);
     });
-
-    initDragAndDrop(favoritesList);
   }
 
-  function initDragAndDrop(container) {
+  function initDragAndDrop(container, storageCallback) {
     let draggedItem = null;
 
     container.querySelectorAll(".folder-item-wrapper").forEach((item) => {
+      if (item.hasAttribute("data-drag-initialized")) return;
+      item.setAttribute("data-drag-initialized", "true");
       item.draggable = true;
 
       item.addEventListener("dragstart", (e) => {
@@ -168,7 +204,9 @@
           .map(el => el.dataset.folder)
           .filter(Boolean);
         
-        saveFavorites(newOrder);
+        if (storageCallback) {
+          storageCallback(newOrder);
+        }
       });
 
       item.addEventListener("dragover", (e) => {
@@ -185,6 +223,86 @@
         }
       });
     });
+  }
+
+  function renderAllFoldersWithOrder() {
+    const folderList = document.querySelector(".sidebar-section-grow .folder-list");
+    if (!folderList) return;
+
+    const currentFolders = Array.from(folderList.querySelectorAll("[data-folder]"))
+      .map(el => el.dataset.folder)
+      .filter(Boolean);
+    
+    if (currentFolders.length === 0) return;
+
+    const orderedFolders = applyFolderOrder(currentFolders);
+    
+    if (JSON.stringify(currentFolders) === JSON.stringify(orderedFolders)) {
+      initDragAndDrop(folderList, saveFolderOrder);
+      return;
+    }
+
+    const selectedFolder = getSelectedFolderFromDOM();
+    
+    const folderIcon = (name) => {
+      const n = String(name || "").toLowerCase();
+      if (n.includes("inbox") || n.includes("gelen")) return "inbox";
+      if (n.includes("sent") || n.includes("gönderil") || n.includes("gonderil")) return "send";
+      if (n.includes("draft") || n.includes("taslak")) return "drafts";
+      if (n.includes("deleted") || n.includes("silinmiş") || n.includes("silinmis") || n.includes("trash")) return "delete";
+      if (n.includes("junk") || n.includes("spam") || n.includes("gereksiz")) return "report";
+      if (n.includes("archive") || n.includes("arşiv") || n.includes("arsiv")) return "archive";
+      if (n.includes("outbox") || n.includes("giden")) return "outbox";
+      if (n.includes("notes") || n.includes("notlar")) return "note";
+      if (n.includes("calendar") || n.includes("takvim")) return "calendar_today";
+      if (n.includes("contacts") || n.includes("kişiler") || n.includes("kisiler")) return "contacts";
+      if (n.includes("tasks") || n.includes("görev") || n.includes("gorev")) return "task_alt";
+      if (n.includes("journal")) return "menu_book";
+      if (n.includes("done") || n.includes("tamamlanan")) return "check_circle";
+      if (n.includes("conversation") || n.includes("konuşma") || n.includes("konusma")) return "forum";
+      if (n.includes("birthday") || n.includes("doğum") || n.includes("dogum")) return "cake";
+      return "folder";
+    };
+
+    const escapeHtml = (value) => {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    };
+
+    const getFolderCount = (folder) => {
+      const existing = folderList.querySelector(`[data-folder="${CSS.escape(folder)}"] .folder-count`);
+      return existing ? existing.outerHTML : "";
+    };
+
+    const html = orderedFolders.map((folder) => {
+      const isActive = folder === selectedFolder;
+      const icon = folderIcon(folder);
+      const count = isActive ? getFolderCount(folder) : "";
+      const isFav = isFavorite(folder);
+      
+      return `<div class="folder-item-wrapper${isActive ? " active" : ""}" data-folder="${escapeHtml(folder)}">
+        <a class="folder-item${isActive ? " active" : ""}" href="/?folder=${encodeURIComponent(folder)}">
+          <span class="material-symbols-outlined folder-icon">${icon}</span>
+          <span class="folder-name">${escapeHtml(folder)}</span>
+          ${count}
+        </a>
+        <button type="button" class="folder-favorite-btn${isFav ? " is-favorite" : ""}" data-folder="${escapeHtml(folder)}" title="Favorilere ekle/çıkar">
+          <span class="material-symbols-outlined">${isFav ? "star" : "star_outline"}</span>
+        </button>
+      </div>`;
+    }).join("");
+
+    folderList.innerHTML = html;
+
+    folderList.querySelectorAll(".folder-favorite-btn").forEach((btn) => {
+      btn.addEventListener("click", handleFavoriteClick);
+    });
+
+    initDragAndDrop(folderList, saveFolderOrder);
   }
 
   function handleFavoriteClick(e) {
@@ -221,6 +339,8 @@
   function init() {
     console.log("[favorites] Init başlıyor...");
     
+    renderAllFoldersWithOrder();
+    
     document.querySelectorAll(".folder-favorite-btn").forEach((btn) => {
       const folder = btn.dataset.folder;
       const isFav = isFavorite(folder);
@@ -229,6 +349,11 @@
     });
 
     renderFavoritesList();
+    
+    const favoritesList = document.getElementById("favorites-list");
+    if (favoritesList) {
+      initDragAndDrop(favoritesList, saveFavorites);
+    }
   }
 
   function waitForPageData(callback, maxAttempts = 50) {
