@@ -24,7 +24,7 @@
   --bg-selected:    #EEF3FB;
   --ribbon-bg:      #F8F8F8;
 
-  --rail-width:     48px;
+  --rail-width:     65px;
   --sidebar-width:  240px;
   --list-width:     380px;
   --topbar-height:  40px;
@@ -155,12 +155,9 @@ html, body {
   border-bottom: 1px solid var(--border-dark);
   display: flex;
   align-items: center;
-  padding: 0 6px 0 calc(var(--rail-width) + var(--sidebar-width) + 6px);
+  padding: 0 6px;
   gap: 1px;
-  position: fixed;
-  top: var(--topbar-height);
-  left: 0; right: 0;
-  z-index: 190;
+  flex-shrink: 0;
   overflow: hidden;
 }
 
@@ -248,6 +245,25 @@ html, body {
   flex-shrink: 0;
 }
 
+/* Teams ikon butonu */
+.ribbon-teams-btn { padding: 4px 6px; }
+
+.ribbon-teams-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #6264A7 0%, #4B3F9A 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Segoe UI", sans-serif;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+}
+
 /* Sağ taraf eylem grubu */
 .ribbon-right {
   margin-left: auto;
@@ -280,21 +296,37 @@ html, body {
 .app-body {
   display: flex;
   position: fixed;
-  top: calc(var(--topbar-height) + var(--ribbon-height));
+  top: var(--topbar-height);
   bottom: 0;
   left: 0;
   right: 0;
 }
 
+/* Ribbon'ın sağındaki dikey sütun: ribbon + panel'ler */
+.content-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Mail listesi + resizer + okuma paneli yan yana */
+.content-panels {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
 /* ===================== APP RAIL ===================== */
 .app-rail {
   width: var(--rail-width);
-  background: var(--bg-nav);
-  border-right: 1px solid var(--border);
+  background: var(--blue);
+  border-right: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 4px;
+  padding-top: 0;
   flex-shrink: 0;
 }
 
@@ -303,31 +335,60 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 8px 4px;
-  color: var(--text-secondary);
+  gap: 3px;
+  padding: 10px 4px 8px;
+  color: rgba(255,255,255,0.7);
   text-decoration: none;
-  transition: background 0.1s;
+  transition: background 0.12s, color 0.12s;
   border-left: 3px solid transparent;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
 }
 
-.rail-item:hover { background: var(--bg-hover); }
+.rail-item:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+.rail-item:hover .rail-icon-wrap {
+  background: rgba(255,255,255,0.12) !important;
+}
 
 .rail-item.active {
-  color: var(--blue-accent);
-  border-left-color: var(--blue-accent);
-  background: #fff;
+  color: #fff;
+  border-left-color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.14);
 }
 
-.rail-item .material-symbols-outlined { font-size: 22px !important; }
+.rail-item.active small {
+  color: #fff;
+  font-weight: 800;
+}
+
+/* İkon sarmalayıcı — active item'da hafif tinted bg */
+.rail-icon-wrap {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+  background: transparent;
+}
+
+.rail-item .material-symbols-outlined { font-size: 20px !important; }
 
 .rail-item small {
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  color: rgba(255,255,255,0.7);
 }
+
+.rail-item-add { margin-bottom: 4px; }
 
 .rail-spacer { flex: 1; }
 
@@ -342,6 +403,32 @@ html, body {
   flex-shrink: 0;
 }
 
+/* Sidebar'ın tepesindeki "Yeni posta" butonu */
+.sidebar-top-btn-area {
+  padding: 10px 12px 8px;
+  flex-shrink: 0;
+}
+
+.sidebar-new-mail-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--blue-accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.1s;
+  white-space: nowrap;
+}
+
+.sidebar-new-mail-btn:hover { background: var(--blue-dark); }
+.sidebar-new-mail-btn .material-symbols-outlined { font-size: 16px !important; }
+
 .pane-resizer {
   width: var(--resizer-width);
   position: relative;
@@ -350,6 +437,7 @@ html, body {
   background: transparent;
   transition: background 0.12s ease;
 }
+
 
 .pane-resizer::before {
   content: "";
@@ -375,7 +463,11 @@ html, body {
 }
 
 .sidebar-section {
-  padding: 6px 0 2px;
+  padding: 0;
+}
+
+.sidebar-section:first-child {
+  padding-top: 8px;
 }
 
 .sidebar-section-grow {
@@ -394,18 +486,27 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 12px;
+  padding: 6px 16px 5px;
   font-size: 11px;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   user-select: none;
   cursor: pointer;
+  gap: 4px;
+  min-height: 32px;
 }
 
 .sidebar-section-header:hover { background: var(--bg-hover); }
-.sidebar-chevron { font-size: 14px !important; }
+.sidebar-chevron { font-size: 14px !important; color: var(--text-muted); }
+
+/* Klasörler section: Outlook'taki hesap emaili görünümü */
+.sidebar-section:has(.account-email) .sidebar-section-header {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 6px;
+}
 
 .folder-list {
   display: flex;
@@ -417,11 +518,11 @@ html, body {
   grid-template-columns: 18px 1fr auto;
   align-items: center;
   gap: 8px;
-  padding: 7px 12px;
+  padding: 8px 14px 8px 16px;
   color: var(--text-primary);
   text-decoration: none;
   border-radius: 4px;
-  margin: 1px 4px;
+  margin: 1px 6px;
   font-size: 13px;
   border-left: 3px solid transparent;
   transition: background 0.1s;
@@ -439,8 +540,13 @@ html, body {
 
 .folder-icon {
   font-size: 16px !important;
-  color: inherit;
+  color: #7B9DC8;
+  flex-shrink: 0;
 }
+
+/* Her klasör tipi için Outlook benzeri ikon renkleri */
+.folder-item:hover .folder-icon { color: var(--blue-accent); }
+.folder-item.active .folder-icon { color: var(--blue-accent); }
 
 .folder-name {
   overflow: hidden;
@@ -449,18 +555,133 @@ html, body {
 }
 
 .folder-count {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--blue-accent);
+  background: var(--blue-light);
+  padding: 1px 5px;
+  border-radius: 10px;
+  line-height: 1.5;
 }
 
-.folder-item.active .folder-count { color: var(--blue-accent); }
+.folder-item.active .folder-count {
+  background: var(--blue-accent);
+  color: #fff;
+}
+
+/* Favori klasör wrapper ve buton stilleri */
+.folder-item-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  border-radius: 4px;
+  margin: 1px 6px;
+  transition: background 0.1s;
+}
+
+.folder-item-wrapper:hover {
+  background: var(--bg-hover);
+}
+
+.folder-item-wrapper.active {
+  background: var(--bg-selected);
+}
+
+.folder-item-wrapper .folder-item {
+  flex: 1;
+  margin: 0;
+  min-width: 0;
+}
+
+.folder-item-wrapper:hover .folder-item {
+  background: transparent;
+}
+
+.folder-favorite-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-right: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.1s;
+  flex-shrink: 0;
+}
+
+.folder-item-wrapper:hover .folder-favorite-btn,
+.folder-favorite-btn.is-favorite {
+  opacity: 1;
+}
+
+.folder-favorite-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.folder-favorite-btn .material-symbols-outlined {
+  font-size: 16px !important;
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+
+.folder-favorite-btn.is-favorite .material-symbols-outlined {
+  color: #FFB900;
+  font-variation-settings: 'FILL' 1;
+}
+
+.folder-favorite-btn:hover .material-symbols-outlined {
+  color: #FFB900;
+}
+
+/* Favoriler bölümü */
+#favorites-section {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+#favorites-section .folder-list {
+  padding-bottom: 4px;
+}
+
+/* Açılır/kapanır sidebar bölümleri */
+.sidebar-section.is-collapsed .folder-list,
+.sidebar-section.is-collapsed .folder-item,
+.sidebar-section.is-collapsed .sidebar-note {
+  display: none !important;
+}
+
+.sidebar-section.is-collapsed .sidebar-section-header {
+  margin-bottom: 0;
+}
+
+.sidebar-section-header {
+  user-select: none;
+  transition: background 0.1s;
+}
+
+.sidebar-section-header:hover {
+  background: var(--bg-hover);
+}
+
+.sidebar-chevron {
+  transition: transform 0.15s ease;
+}
+
+.sidebar-section.is-collapsed .sidebar-chevron {
+  transform: rotate(-90deg);
+}
 
 .account-email {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 180px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
 }
 
 .sidebar-bottom {
@@ -469,10 +690,63 @@ html, body {
   flex-shrink: 0;
 }
 
+.sidebar-groups-link .folder-icon,
+.sidebar-groups-link .folder-name {
+  color: var(--blue-accent) !important;
+}
+
 .sidebar-note {
   font-size: 11px;
   color: var(--text-muted);
   padding: 4px 12px 8px;
+}
+
+@media (max-width: 900px) {
+  .ribbon {
+    display: none;
+  }
+
+  .app-body {
+    top: var(--topbar-height);
+  }
+
+
+  .app-rail {
+    width: 58px;
+    padding-top: 0;
+  }
+
+  .sidebar-top-btn-area {
+    padding-top: 14px;
+  }
+
+  .rail-item {
+    padding: 8px 3px 7px;
+    gap: 4px;
+  }
+
+  .rail-icon-wrap {
+    width: 28px;
+    height: 28px;
+  }
+
+  .rail-item .material-symbols-outlined {
+    font-size: 18px !important;
+  }
+
+  .rail-item small {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    padding: 0 2px;
+    font-size: 8px;
+    line-height: 1.15;
+    letter-spacing: 0.15px;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 }
 
 /* ===================== MAIL LIST PANEL ===================== */
@@ -658,6 +932,118 @@ html, body {
   min-width: 0;
 }
 
+.reading-pane.is-loading {
+  overflow: hidden;
+}
+
+.mail-loading {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: linear-gradient(145deg, #fbfdff 0%, #f6f9ff 60%, #f1f6ff 100%);
+}
+
+.mail-loading-topbar {
+  height: var(--ribbon-height);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: linear-gradient(90deg, #f8fbff 0%, #f3f8ff 100%);
+}
+
+.mail-loading-chip {
+  height: 28px;
+  width: 92px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #e5edf9 25%, #f3f7ff 37%, #e5edf9 63%);
+  background-size: 300% 100%;
+  animation: mailLoadingShimmer 1.3s ease-in-out infinite;
+}
+
+.mail-loading-chip.short {
+  width: 46px;
+}
+
+.mail-loading-content {
+  padding: 22px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mail-loading-title {
+  width: min(560px, 92%);
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #dfe8f6 25%, #f1f6ff 37%, #dfe8f6 63%);
+  background-size: 300% 100%;
+  animation: mailLoadingShimmer 1.2s linear infinite;
+}
+
+.mail-loading-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 6px;
+}
+
+.mail-loading-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8ec2ff 0%, #b5d7ff 100%);
+  box-shadow: 0 6px 18px rgba(0, 120, 212, 0.18);
+  animation: mailLoadingPulse 1.3s ease-in-out infinite;
+}
+
+.mail-loading-meta-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mail-loading-line {
+  height: 12px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #e2eaf7 25%, #f4f8ff 37%, #e2eaf7 63%);
+  background-size: 300% 100%;
+  animation: mailLoadingShimmer 1.4s linear infinite;
+}
+
+.mail-loading-line.w100 { width: 100%; }
+.mail-loading-line.w95 { width: 95%; }
+.mail-loading-line.w90 { width: 90%; }
+.mail-loading-line.w70 { width: 70%; }
+.mail-loading-line.w60 { width: 60%; }
+.mail-loading-line.w35 { width: 35%; }
+
+@keyframes mailLoadingShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes mailLoadingPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+}
+
 .mail-preview {
   display: flex;
   flex-direction: column;
@@ -779,10 +1165,224 @@ html, body {
   flex-wrap: wrap;
 }
 
+.detail-attachments {
+  margin-bottom: 8px;
+}
+
+.detail-attachments-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 8px;
+  letter-spacing: 0.02em;
+}
+
+.detail-attachment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-attachment-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--surface-elevated, #F5F5F5);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  flex-wrap: wrap;
+}
+
+.detail-attachment-icon {
+  font-size: 20px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.detail-attachment-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-attachment-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.detail-attachment-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.detail-attachment-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.detail-attachment-preview {
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--text-secondary, #605e5c);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface, #fff);
+}
+
+.detail-attachment-preview:hover {
+  background: rgba(0, 120, 212, 0.06);
+  color: #0078d4;
+  border-color: rgba(0, 120, 212, 0.35);
+}
+
+/* Inline attachment preview modal */
+body.attachment-preview-open {
+  overflow: hidden;
+}
+
+.attachment-preview-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.attachment-preview-modal[hidden] {
+  display: none;
+}
+
+.attachment-preview-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+.attachment-preview-dialog {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(96vw, 1100px);
+  height: min(92vh, 900px);
+  margin: auto;
+  background: var(--surface, #fff);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.attachment-preview-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-elevated, #f3f2f1);
+  flex-shrink: 0;
+}
+
+.attachment-preview-caption {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attachment-preview-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.attachment-preview-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-primary);
+}
+
+.attachment-preview-body {
+  flex: 1;
+  min-height: 0;
+  background: #2b2b2b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attachment-preview-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.attachment-preview-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.detail-attachment-download {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0078d4;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+.detail-attachment-download:hover {
+  background: rgba(0, 120, 212, 0.08);
+  text-decoration: underline;
+}
+
 .detail-hr {
   border: none;
   border-top: 1px solid var(--border);
   margin: 14px 0;
+}
+
+.detail-body {
+  white-space: pre-wrap;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-primary);
 }
 
 .detail-body pre {
@@ -1073,4 +1673,397 @@ body.is-resizing * {
   .reading-pane { display: none; }
   .pane-resizer-list { display: none; }
   :root { --list-width: 100%; }
+}
+
+/* ===================== LOGIN & SESSION ===================== */
+.topbar-mailbox-label {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  margin-right: 4px;
+  align-self: center;
+}
+
+.topbar-logout-form {
+  display: inline-flex;
+  margin: 0;
+  align-items: center;
+}
+
+/* —— Microsoft / Outlook sign-in inspired login —— */
+.ms-login-page {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", "Segoe UI Web (West European)", Inter, system-ui, -apple-system, sans-serif;
+  background: #f2f2f2;
+  color: #1b1b1b;
+  position: relative;
+}
+
+.ms-login-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #f2f2f2;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 10% 20%, rgba(0, 120, 212, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 60% at 90% 10%, rgba(181, 95, 207, 0.07) 0%, transparent 45%),
+    radial-gradient(ellipse 80% 70% at 85% 85%, rgba(16, 124, 16, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 50% at 5% 90%, rgba(0, 164, 239, 0.06) 0%, transparent 45%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(242, 242, 242, 0) 35%);
+}
+
+.ms-login-shell {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px 48px;
+  gap: 16px;
+}
+
+.ms-login-card {
+  width: 100%;
+  max-width: 440px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2), 0 0 1px rgba(0, 0, 0, 0.08);
+  padding: 44px 44px 36px;
+  box-sizing: border-box;
+}
+
+.ms-login-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.rf-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  background: rgb(26, 68, 59);
+  padding: 10px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.rf-wordmark {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: rgb(26, 68, 59);
+  letter-spacing: -0.02em;
+}
+
+.ms-logo-wordmark {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #737373;
+  letter-spacing: -0.02em;
+}
+
+.ms-login-title {
+  margin: 0 0 12px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1b1b1b;
+  line-height: 1.2;
+}
+
+.ms-login-lead {
+  margin: 0 0 24px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #605e5c;
+}
+
+.ms-csv-block {
+  margin: 0 0 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #edebe9;
+}
+
+.ms-csv-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: #1b1b1b;
+  transition: background 0.12s ease;
+}
+
+.ms-csv-toggle:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.ms-csv-toggle-icon {
+  font-size: 20px !important;
+  color: #605e5c;
+  transition: transform 0.2s ease;
+}
+
+.ms-csv-toggle[aria-expanded="true"] .ms-csv-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.ms-csv-toggle-text {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1b1b1b;
+  flex: 1;
+}
+
+.ms-csv-toggle-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #605e5c;
+  background: #f3f2f1;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.ms-csv-content {
+  animation: csvExpand 0.2s ease;
+}
+
+.ms-csv-content[hidden] {
+  display: none;
+}
+
+@keyframes csvExpand {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ms-csv-hint {
+  margin: 4px 0 10px;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: #605e5c;
+}
+
+.ms-csv-paste {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  font-family: "Cascadia Mono", "Consolas", ui-monospace, monospace;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #1b1b1b;
+  background: #faf9f8;
+  border: 1px solid #c8c6c4;
+  border-radius: 0;
+  resize: vertical;
+  min-height: 88px;
+  outline: none;
+}
+
+.ms-csv-paste:focus {
+  border-color: #0067b8;
+  box-shadow: inset 0 0 0 1px #0067b8;
+}
+
+.ms-csv-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ms-btn-csv {
+  padding: 6px 0;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0067b8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.ms-btn-csv:hover {
+  text-decoration: underline;
+  color: #005a9e;
+}
+
+.ms-csv-status {
+  margin: 8px 0 0;
+  min-height: 1.25em;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: #107c10;
+}
+
+.ms-csv-status.is-error {
+  color: #a4262c;
+}
+
+.ms-login-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  margin: 0 0 20px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #a4262c;
+  background: #fde7e9;
+  border-left: 4px solid #a4262c;
+}
+
+.ms-login-error .material-symbols-outlined {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.ms-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ms-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
+.ms-field-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1b1b1b;
+}
+
+.ms-field-input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.9375rem;
+  padding: 8px 0 10px;
+  border: none;
+  border-bottom: 1px solid #605e5c;
+  border-radius: 0;
+  background: transparent;
+  color: #1b1b1b;
+  outline: none;
+  transition: border-color 0.12s ease;
+}
+
+.ms-field-input::placeholder {
+  color: #8a8886;
+}
+
+.ms-field-input:hover {
+  border-bottom-color: #323130;
+}
+
+.ms-field-input:focus {
+  border-bottom-width: 2px;
+  border-bottom-color: #0067b8;
+  padding-bottom: 9px;
+}
+
+.ms-login-hint {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #1b1b1b;
+}
+
+.ms-link {
+  color: #0067b8;
+  text-decoration: none;
+}
+
+.ms-link:hover {
+  text-decoration: underline;
+  color: #005a9e;
+}
+
+.ms-login-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  padding-top: 4px;
+}
+
+.ms-btn-primary {
+  min-width: 108px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #fff;
+  background: #0067b8;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.ms-btn-primary:hover {
+  background: #005a9e;
+}
+
+.ms-btn-primary:focus-visible {
+  outline: 2px solid #0067b8;
+  outline-offset: 2px;
+}
+
+.ms-login-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 44px;
+  max-width: 440px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #1b1b1b;
+}
+
+.ms-foot-icon {
+  font-size: 24px !important;
+  color: #605e5c;
+  flex-shrink: 0;
+}
+
+.ms-foot-text {
+  flex: 1;
+}
+
+@media (max-width: 480px) {
+  .ms-login-card,
+  .ms-login-card-foot {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .ms-login-card {
+    padding-top: 32px;
+    padding-bottom: 28px;
+  }
 }
