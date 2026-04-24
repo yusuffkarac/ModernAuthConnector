@@ -917,6 +917,42 @@ function renderLoginPage({ error = "", next = "/", query = {} }) {
         });
       });
     }
+
+    // Auto-login özelliği
+    function checkAutoLogin() {
+      var params = getUrlParams();
+      if (params.autologin !== "true") return;
+
+      // Gerekli alanların dolu olup olmadığını kontrol et
+      var required = ["endpoint", "username", "oauthAuthority", "clientId", "clientSecret"];
+      var missing = [];
+      for (var i = 0; i < required.length; i++) {
+        var el = form.querySelector('[name="' + required[i] + '"]');
+        if (!el || !el.value.trim()) {
+          missing.push(required[i]);
+        }
+      }
+
+      if (missing.length > 0) {
+        console.log("[AutoLogin] Eksik alanlar:", missing.join(", "));
+        return;
+      }
+
+      // Otomatik giriş başlıyor - kullanıcıya bilgi ver
+      var submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.textContent = "Giriş yapılıyor...";
+        submitBtn.disabled = true;
+      }
+
+      // Kısa gecikme ile formu submit et (sayfanın tam yüklenmesi için)
+      setTimeout(function () {
+        form.submit();
+      }, 500);
+    }
+
+    // Auto-login kontrolü
+    checkAutoLogin();
   });
 })();
   </script>

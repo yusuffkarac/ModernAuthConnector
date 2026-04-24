@@ -80,6 +80,7 @@ async function bootstrap() {
       oauthAuthority: String(req.query.oauthAuthority || "").trim(),
       clientId: String(req.query.clientId || "").trim(),
       clientSecret: String(req.query.clientSecret || "").trim(),
+      autologin: String(req.query.autologin || "").trim(),
     };
     return res.status(200).send(renderLoginPage({ error, next, query }));
   });
