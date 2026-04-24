@@ -646,6 +646,26 @@ html, body {
   padding-bottom: 4px;
 }
 
+/* Sürükle-bırak stilleri */
+.folder-item-wrapper {
+  cursor: grab;
+}
+
+.folder-item-wrapper:active {
+  cursor: grabbing;
+}
+
+.folder-item-wrapper.dragging {
+  opacity: 0.6;
+  background: var(--bg-selected);
+  border: 2px dashed var(--blue-accent);
+  border-radius: 4px;
+}
+
+.folder-item-wrapper .folder-item {
+  cursor: pointer;
+}
+
 /* Açılır/kapanır sidebar bölümleri */
 .sidebar-section.is-collapsed .folder-list,
 .sidebar-section.is-collapsed .folder-item,

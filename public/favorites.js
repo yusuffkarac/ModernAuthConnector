@@ -144,6 +144,47 @@
     favoritesList.querySelectorAll(".folder-favorite-btn").forEach((btn) => {
       btn.addEventListener("click", handleFavoriteClick);
     });
+
+    initDragAndDrop(favoritesList);
+  }
+
+  function initDragAndDrop(container) {
+    let draggedItem = null;
+
+    container.querySelectorAll(".folder-item-wrapper").forEach((item) => {
+      item.draggable = true;
+
+      item.addEventListener("dragstart", (e) => {
+        draggedItem = item;
+        item.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+      });
+
+      item.addEventListener("dragend", () => {
+        item.classList.remove("dragging");
+        draggedItem = null;
+        
+        const newOrder = Array.from(container.querySelectorAll(".folder-item-wrapper"))
+          .map(el => el.dataset.folder)
+          .filter(Boolean);
+        
+        saveFavorites(newOrder);
+      });
+
+      item.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        if (!draggedItem || draggedItem === item) return;
+
+        const rect = item.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        
+        if (e.clientY < midpoint) {
+          item.before(draggedItem);
+        } else {
+          item.after(draggedItem);
+        }
+      });
+    });
   }
 
   function handleFavoriteClick(e) {
@@ -206,11 +247,18 @@
     }, 100);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      waitForPageData(init);
+  function runWhenReady() {
+    // CSS'in tam yüklenmesi ve paint cycle için bir frame bekle (FOUC önlemi)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        waitForPageData(init);
+      });
     });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", runWhenReady);
   } else {
-    waitForPageData(init);
+    runWhenReady();
   }
 })();
