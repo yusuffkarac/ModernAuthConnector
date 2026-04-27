@@ -1476,10 +1476,10 @@ body.attachment-preview-open {
 /* ===================== FLAG PILLS ===================== */
 .flag-pill {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 1px 8px;
   border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 500;
   line-height: 1.4;
   border: 1px solid transparent;
   white-space: nowrap;
@@ -2214,4 +2214,394 @@ body.is-resizing * {
     padding-bottom: 24px;
     max-height: calc(100vh - 80px);
   }
+}
+
+/* --- Posta: arama, hesap, tema --- */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.topbar-search-form {
+  width: 100%;
+  max-width: 520px;
+}
+
+.topbar-search-form .search-box {
+  width: 100%;
+}
+
+.search-submit-btn {
+  border: none;
+  background: transparent;
+  padding: 0 2px 0 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: inherit;
+}
+
+.topbar-account-cluster {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 4px;
+}
+
+.topbar-account-select {
+  max-width: 160px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.topbar-text-link,
+.topbar-text-btn {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.topbar-remove-account-form {
+  display: inline;
+}
+
+.list-search-badge {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-right: 8px;
+}
+
+.list-clear-search {
+  font-size: 12px;
+  color: var(--blue-accent);
+  margin-right: 8px;
+  text-decoration: none;
+}
+
+.list-clear-search:hover {
+  text-decoration: underline;
+}
+
+.ms-theme-fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 300;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: #323130;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ms-theme-fab .material-symbols-outlined {
+  font-size: 22px;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] {
+  --text-primary: #f3f2f1;
+  --text-secondary: #c8c6c4;
+  --text-muted: #a19f9d;
+  --border: #3b3a39;
+  --border-dark: #605e5c;
+  --bg-main: #1b1a19;
+  --bg-nav: #252423;
+  --bg-hover: #323130;
+  --bg-selected: #2c4a6e;
+  --ribbon-bg: #292827;
+  --blue-light: #2c3e50;
+}
+
+html[data-theme="dark"] .sidebar,
+html[data-theme="dark"] .mail-list-panel,
+html[data-theme="dark"] .reading-pane,
+html[data-theme="dark"] .content-area {
+  background: var(--bg-main);
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .mail-item {
+  border-color: var(--border);
+}
+
+html[data-theme="dark"] .search-box {
+  background: #323130;
+}
+
+html[data-theme="dark"] .search-box:focus-within {
+  background: #3b3a39;
+  outline-color: var(--blue-accent);
+}
+
+html[data-theme="dark"] .search-input {
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .ms-login-page {
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .ms-login-card {
+  background: #252423;
+  border-color: var(--border);
+}
+
+html[data-theme="dark"] .detail-attachment-row {
+  background: #2b2a29;
+  border-color: #4a4846;
+}
+
+html[data-theme="dark"] .detail-attachment-preview {
+  background: #232221;
+  border-color: #4a4846;
+  color: var(--text-secondary);
+}
+
+html[data-theme="dark"] .detail-attachment-preview:hover {
+  background: #2f2e2d;
+  color: #7fc0ff;
+  border-color: #5d83a8;
+}
+
+html[data-theme="dark"] .detail-attachment-download {
+  color: #7fc0ff;
+}
+
+html[data-theme="dark"] .detail-attachment-download:hover {
+  background: rgba(127, 192, 255, 0.16);
+}
+
+html[data-theme="dark"] .attachment-preview-dialog,
+html[data-theme="dark"] .confirm-modal-card,
+html[data-theme="dark"] .context-menu {
+  background: #252423;
+  border-color: #4a4846;
+}
+
+html[data-theme="dark"] .attachment-preview-toolbar {
+  background: #2f2e2d;
+  border-bottom-color: #4a4846;
+}
+
+html[data-theme="dark"] .attachment-preview-frame {
+  background: #1b1a19;
+}
+
+html[data-theme="dark"] .attachment-preview-close:hover,
+html[data-theme="dark"] .context-menu-item:hover {
+  background: #323130;
+}
+
+html[data-theme="dark"] .confirm-field-select {
+  background: #1f1e1d;
+  border-color: #4a4846;
+}
+
+html[data-theme="dark"] .error-banner {
+  background: #3a2020;
+  border-color: #7d3a3a;
+  color: #ffb4ab;
+}
+
+html[data-theme="dark"] .warning-banner {
+  background: #3b3120;
+  border-color: #8a6e3c;
+  color: #ffd47a;
+}
+
+html[data-theme="dark"] .topbar-account-select {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .topbar-account-select option {
+  background: #252423;
+  color: #f3f2f1;
+}
+
+/* Outlook-benzeri koyu tema ince ayarları */
+html[data-theme="dark"] .topbar {
+  background: #101214;
+  border-top: 2px solid #4fa3ff;
+}
+
+html[data-theme="dark"] .topbar-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme="dark"] .app-rail {
+  background: #0f1114;
+}
+
+html[data-theme="dark"] .rail-item {
+  color: rgba(245, 248, 255, 0.68);
+}
+
+html[data-theme="dark"] .rail-item:hover {
+  background: rgba(79, 163, 255, 0.12);
+}
+
+html[data-theme="dark"] .rail-item.active {
+  background: rgba(79, 163, 255, 0.2);
+  border-left-color: #6fb6ff;
+}
+
+html[data-theme="dark"] .sidebar {
+  background: #16181c;
+  border-right-color: #2b2f36;
+}
+
+html[data-theme="dark"] .content-area {
+  background: #121417;
+}
+
+html[data-theme="dark"] .ribbon {
+  background: #191c20;
+  border-bottom-color: #2a2e35;
+}
+
+html[data-theme="dark"] .ribbon-btn,
+html[data-theme="dark"] .ribbon-split-drop {
+  color: #e2e6ee;
+}
+
+html[data-theme="dark"] .ribbon-btn:hover,
+html[data-theme="dark"] .ribbon-split-grp:hover {
+  background: #242931;
+}
+
+html[data-theme="dark"] .ribbon-folder-select {
+  background: #1f2329;
+  color: #e2e6ee;
+  border-color: #3b424d;
+}
+
+html[data-theme="dark"] .folder-item {
+  color: #d9dee7;
+}
+
+html[data-theme="dark"] .folder-item:hover {
+  background: #222731;
+}
+
+html[data-theme="dark"] .folder-item.active {
+  background: #1e3650;
+  border-left-color: #69b2ff;
+}
+
+html[data-theme="dark"] .folder-item .folder-count,
+html[data-theme="dark"] .folder-item.active .folder-count {
+  background: #2a3949;
+  color: #a9d3ff;
+}
+
+html[data-theme="dark"] .mail-list-panel {
+  background: #171a1f;
+}
+
+html[data-theme="dark"] .list-header {
+  background: #191d23;
+  border-bottom-color: #2e333c;
+}
+
+html[data-theme="dark"] .list-tab {
+  color: #b9c2cf;
+}
+
+html[data-theme="dark"] .list-tab.active {
+  color: #f2f6ff;
+  border-bottom-color: #6fb6ff;
+}
+
+html[data-theme="dark"] .mail-item {
+  background: #171a1f;
+  border-bottom-color: #262b33;
+}
+
+html[data-theme="dark"] .mail-item:hover {
+  background: #1f242d;
+}
+
+html[data-theme="dark"] .mail-item.active {
+  background: #233446;
+}
+
+html[data-theme="dark"] .mail-date,
+html[data-theme="dark"] .mail-subject,
+html[data-theme="dark"] .mail-meta-row,
+html[data-theme="dark"] .mail-sender {
+  color: #d4dbe6;
+}
+
+html[data-theme="dark"] .mail-item.unread .mail-date {
+  color: #83c4ff;
+}
+
+html[data-theme="dark"] .reading-pane {
+  background: #111317;
+}
+
+html[data-theme="dark"] .mail-preview {
+  background: #111317;
+}
+
+/* Dark mode badge tonu: daha soft, daha az kontrast */
+html[data-theme="dark"] .flag-pill {
+  border-width: 1px;
+  font-weight: 500;
+}
+
+html[data-theme="dark"] .flag-pill.is-seen,
+html[data-theme="dark"] .flag-pill.is-answered {
+  background: rgba(83, 174, 114, 0.18);
+  color: #9dd8b3;
+  border-color: rgba(83, 174, 114, 0.38);
+}
+
+html[data-theme="dark"] .flag-pill.is-flagged {
+  background: rgba(196, 141, 76, 0.18);
+  color: #e1be92;
+  border-color: rgba(196, 141, 76, 0.38);
+}
+
+html[data-theme="dark"] .flag-pill.is-draft {
+  background: rgba(137, 111, 183, 0.2);
+  color: #c9b5e9;
+  border-color: rgba(137, 111, 183, 0.42);
+}
+
+html[data-theme="dark"] .flag-pill.is-deleted {
+  background: rgba(186, 92, 92, 0.2);
+  color: #e5aaaa;
+  border-color: rgba(186, 92, 92, 0.42);
+}
+
+html[data-theme="dark"] .flag-pill.is-default {
+  background: rgba(160, 168, 180, 0.16);
+  color: #c7ced9;
+  border-color: rgba(160, 168, 180, 0.34);
 }

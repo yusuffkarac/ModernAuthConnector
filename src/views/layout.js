@@ -14,6 +14,32 @@ function safeJson(value) {
     .replaceAll(">", "\\u003e");
 }
 
+/** Posta sayfası query dizesi (başında ? yok): account, folder, uid, q */
+function buildMailQs(accountId, params = {}) {
+  const p = new URLSearchParams();
+  if (accountId) p.set("account", String(accountId));
+  if (params.folder != null && String(params.folder).trim() !== "") p.set("folder", String(params.folder).trim());
+  if (params.uid != null && String(params.uid).trim() !== "") p.set("uid", String(params.uid).trim());
+  const qv = params.q != null ? String(params.q).trim() : "";
+  if (qv.length >= 2) p.set("q", qv.slice(0, 120));
+  return p.toString();
+}
+
+function pathWithMailQs(accountId, params = {}) {
+  const s = buildMailQs(accountId, params);
+  return s ? `/?${s}` : "/";
+}
+
+function apiAttachmentQs(folder, uid, part, accountId, inline) {
+  const p = new URLSearchParams();
+  if (accountId) p.set("account", String(accountId));
+  p.set("folder", String(folder || ""));
+  p.set("uid", String(uid || ""));
+  p.set("part", String(part || ""));
+  if (inline) p.set("inline", "1");
+  return `/api/messages/attachment?${p.toString()}`;
+}
+
 function initialsOf(sender) {
   const value = String(sender || "").trim();
   if (!value || value === "-") return "MA";
@@ -89,20 +115,16 @@ const {
   inferMimeTypeFromFilename,
 } = require("../utils/mimeFromFilename");
 
-function renderAttachmentSection(detail, folder) {
+function renderAttachmentSection(detail, folder, accountId = "") {
   const list = Array.isArray(detail.attachments) ? detail.attachments : [];
   if (list.length === 0) {
     return "";
   }
 
-  const folderEnc = encodeURIComponent(String(folder || ""));
-  const uidEnc = encodeURIComponent(String(detail.uid || ""));
-
   const rows = list
     .map((att) => {
-      const partEnc = encodeURIComponent(String(att.part || ""));
-      const href = `/api/messages/attachment?folder=${folderEnc}&uid=${uidEnc}&part=${partEnc}`;
-      const hrefInline = `${href}&inline=1`;
+      const href = apiAttachmentQs(folder, detail.uid || "", att.part || "", accountId, false);
+      const hrefInline = apiAttachmentQs(folder, detail.uid || "", att.part || "", accountId, true);
       const canPreview = attachmentPreviewableByMimeOrFilename(att.mimeType, att.filename || "");
       const sizeLabel = formatAttachmentSize(att.size);
       const inferredMime = inferMimeTypeFromFilename(att.filename || "");
@@ -144,7 +166,7 @@ function renderAttachmentSection(detail, folder) {
     </div>`;
 }
 
-function renderDetailBlock(detail, mailFolder = "") {
+function renderDetailBlock(detail, mailFolder = "", accountId = "") {
   if (!detail) {
     return `<div class="empty-detail">
         <span class="material-symbols-outlined">mark_email_read</span>
@@ -154,7 +176,7 @@ function renderDetailBlock(detail, mailFolder = "") {
 
   const detailInitials = initialsOf(detail.from);
   const detailColor = avatarColor(detailInitials);
-  const attachmentBlock = renderAttachmentSection(detail, mailFolder);
+  const attachmentBlock = renderAttachmentSection(detail, mailFolder, accountId);
 
   return `<article class="mail-preview">
         <div class="detail-actions">
@@ -200,7 +222,15 @@ function renderPage({
   detail,
   error,
   mailboxUsername = "",
+  activeAccountId = "",
+  mailAccounts = [],
+  searchQuery = "",
+  searchActive = false,
+  matchCount = 0,
 }) {
+  const acc = String(activeAccountId || "").trim();
+  const qLink = String(searchQuery || "").trim();
+
   const folderOptions = folders
     .map((folder) => {
       const selected = folder === selectedFolder ? " selected" : "";
@@ -211,7 +241,7 @@ function renderPage({
   const folderLinks = folders
     .map((folder) => {
       const active = folder === selectedFolder ? " active" : "";
-      const href = `/?folder=${encodeURIComponent(folder)}`;
+      const href = pathWithMailQs(acc, { folder, q: qLink });
       const count =
         folder === selectedFolder
           ? `<span class="folder-count">${escapeHtml(total)}</span>`
@@ -230,16 +260,17 @@ function renderPage({
     })
     .join("");
 
+  const emptyText = searchActive ? "Sonuç bulunamadı" : "Bu klasörde e-posta yok";
   const mailItems =
     messages.length === 0
       ? `<div class="empty">
           <span class="material-symbols-outlined" style="font-size:48px;display:block;text-align:center;margin-bottom:8px;color:#C8C6C4">mail_outline</span>
-          <div style="text-align:center;color:#8A8886;font-size:13px">Bu klasörde e-posta yok</div>
+          <div style="text-align:center;color:#8A8886;font-size:13px">${escapeHtml(emptyText)}</div>
         </div>`
       : messages
           .map((m) => {
             const active = m.uid === selectedMessageUid ? " active" : "";
-            const href = `/?folder=${encodeURIComponent(selectedFolder)}&uid=${encodeURIComponent(m.uid)}`;
+            const href = pathWithMailQs(acc, { folder: selectedFolder, uid: m.uid, q: qLink });
             const initials = initialsOf(m.from);
             const col = avatarColor(initials);
             const flags = m.flags || [];
@@ -275,7 +306,7 @@ function renderPage({
           })
           .join("");
 
-  const detailBlock = renderDetailBlock(detail, selectedFolder);
+  const detailBlock = renderDetailBlock(detail, selectedFolder, acc);
 
   const errorBlock = error
     ? `<div class="error-banner"><span class="material-symbols-outlined">error_outline</span>${escapeHtml(error)}</div>`
@@ -285,9 +316,35 @@ function renderPage({
     ? `<div class="warning-banner"><span class="material-symbols-outlined">warning</span>İstenen klasör bulunamadı; ilk klasöre yönlendirildiniz.</div>`
     : "";
 
+  const searchBadge = searchActive
+    ? `<span class="list-search-badge">${escapeHtml(String(matchCount))} sonuç</span>`
+    : "";
+  const clearSearchBlock = searchActive
+    ? `<a class="list-clear-search" href="${pathWithMailQs(acc, { folder: selectedFolder })}">Aramayı temizle</a>`
+    : "";
+
+  const accountOptions = (Array.isArray(mailAccounts) ? mailAccounts : [])
+    .map((a) => {
+      const sel = a.id === acc ? " selected" : "";
+      return `<option value="${escapeHtml(a.id)}"${sel}>${escapeHtml(a.label || a.settings?.username || a.id)}</option>`;
+    })
+    .join("");
+
+  const addAccountHref = `/login?add=1&next=${encodeURIComponent(pathWithMailQs(acc, { folder: selectedFolder, q: qLink }))}`;
+  const removeAccountForm =
+    Array.isArray(mailAccounts) && mailAccounts.length > 1
+      ? `<form method="post" action="/accounts/${encodeURIComponent(acc)}/remove" class="topbar-remove-account-form" onsubmit="return confirm('Bu hesabi bu cihazdan kaldir?');">
+          <input type="hidden" name="next" value="${escapeHtml(pathWithMailQs("", { folder: selectedFolder }))}" />
+          <button type="submit" class="topbar-text-btn" title="Yalnızca bu oturumdan kaldırır">Hesabı kaldır</button>
+        </form>`
+      : "";
+
   const pageData = safeJson({
     folders,
     selectedFolder,
+    activeAccountId: acc,
+    searchQuery: qLink,
+    accountLabel: mailboxUsername,
   });
 
   return `<!doctype html>
@@ -296,11 +353,16 @@ function renderPage({
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Rail Flow - Posta</title>
+  <script>
+(function(){try{var m=localStorage.getItem("mac-theme");var d=document.documentElement;if(m==="dark"){d.setAttribute("data-theme","dark");return;}if(m==="light"){d.setAttribute("data-theme","light");return;}if(m==="system"||!m){d.setAttribute("data-theme",window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");}}catch(e){}})();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css" />
+  <script src="/theme-toggle.js" defer></script>
+  <script src="/mail-auto-refresh.js" defer></script>
   <script src="/panes.js" defer></script>
   <script src="/mail-navigation.js" defer></script>
   <script src="/attachment-preview.js" defer></script>
@@ -318,27 +380,51 @@ function renderPage({
       <span class="brand">Rail Flow</span>
     </div>
     <div class="topbar-search">
-      <div class="search-box">
-        <span class="material-symbols-outlined search-icon">search</span>
-        <input type="text" placeholder="Ara" class="search-input" />
-      </div>
+      <form method="GET" action="/" class="topbar-search-form">
+        <input type="hidden" name="account" value="${escapeHtml(acc)}" />
+        <input type="hidden" name="folder" value="${escapeHtml(selectedFolder)}" />
+        <div class="search-box">
+          <button type="submit" class="search-submit-btn" title="Ara" aria-label="Ara"><span class="material-symbols-outlined search-icon">search</span></button>
+          <input type="text" name="q" placeholder="Konu veya gönderen ara (min. 2 karakter)" class="search-input" value="${escapeHtml(qLink)}" maxlength="120" />
+        </div>
+      </form>
     </div>
     <div class="topbar-actions">
-      <button class="topbar-icon-btn" title="Yardım"><span class="material-symbols-outlined">help_outline</span></button>
-      <button class="topbar-icon-btn" title="Bildirimler"><span class="material-symbols-outlined">notifications</span></button>
-      <button class="topbar-icon-btn" title="Ayarlar"><span class="material-symbols-outlined">settings</span></button>
+      <div class="topbar-account-cluster">
+        <label class="visually-hidden" for="topbar-account-select">Posta hesabı</label>
+        <select id="topbar-account-select" class="topbar-account-select" title="Hesap değiştir">
+          ${accountOptions}
+        </select>
+        <a class="topbar-text-link" href="${escapeHtml(addAccountHref)}">Hesap ekle</a>
+        ${removeAccountForm}
+      </div>
+      <button type="button" class="topbar-icon-btn" id="mac-notify-enable" title="Yeni posta bildirimi"><span class="material-symbols-outlined">notifications</span></button>
+      <button type="button" class="topbar-icon-btn" id="mac-theme-toggle" title="Tema"><span class="material-symbols-outlined">dark_mode</span></button>
       <span class="topbar-mailbox-label" title="${escapeHtml(mailboxUsername)}">${escapeHtml(mailboxUsername || "—")}</span>
       <form method="post" action="/logout" class="topbar-logout-form">
         <button type="submit" class="topbar-icon-btn" title="Çıkış yap"><span class="material-symbols-outlined">logout</span></button>
       </form>
     </div>
   </header>
+  <script>
+  (function(){
+    var sel=document.getElementById("topbar-account-select");
+    if(!sel)return;
+    sel.addEventListener("change",function(){
+      var id=this.value;if(!id)return;
+      var p=new URLSearchParams(window.location.search);
+      p.set("account",id);
+      if(!p.get("folder"))p.set("folder",${JSON.stringify(selectedFolder)});
+      window.location.search=p.toString();
+    });
+  })();
+  </script>
 
   <div class="app-body">
 
     <!-- App Rail (sol dar nav) -->
     <nav class="app-rail">
-      <a class="rail-item active" href="/" title="Posta" style="--nav-color:#72C0FF">
+      <a class="rail-item active" href="${pathWithMailQs(acc, { folder: selectedFolder, q: qLink })}" title="Posta" style="--nav-color:#72C0FF">
         <span class="rail-icon-wrap" style="background:rgba(114,192,255,0.18)">
           <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;color:#72C0FF">mail</span>
         </span>
@@ -403,12 +489,12 @@ function renderPage({
           <span>Sık Kullanılanlar</span>
           <span class="material-symbols-outlined sidebar-chevron">expand_more</span>
         </div>
-        <a class="folder-item${selectedFolder === "INBOX" ? " active" : ""}" href="/?folder=INBOX" style="display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;padding:8px 14px 8px 16px;text-decoration:none;color:inherit;border-radius:4px;margin:1px 6px;border-left:3px solid transparent;white-space:nowrap;">
+        <a class="folder-item${selectedFolder === "INBOX" ? " active" : ""}" href="${pathWithMailQs(acc, { folder: "INBOX", q: qLink })}" style="display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;padding:8px 14px 8px 16px;text-decoration:none;color:inherit;border-radius:4px;margin:1px 6px;border-left:3px solid transparent;white-space:nowrap;">
           <span class="material-symbols-outlined folder-icon" style="font-size:16px;color:#7B9DC8;flex-shrink:0;">inbox</span>
           <span class="folder-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">Gelen Kutusu</span>
           ${selectedFolder === "INBOX" ? `<span class="folder-count">${escapeHtml(total)}</span>` : ""}
         </a>
-        <a class="folder-item${selectedFolder === "Archive" ? " active" : ""}" href="/?folder=Archive" style="display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;padding:8px 14px 8px 16px;text-decoration:none;color:inherit;border-radius:4px;margin:1px 6px;border-left:3px solid transparent;white-space:nowrap;">
+        <a class="folder-item${selectedFolder === "Archive" ? " active" : ""}" href="${pathWithMailQs(acc, { folder: "Archive", q: qLink })}" style="display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;padding:8px 14px 8px 16px;text-decoration:none;color:inherit;border-radius:4px;margin:1px 6px;border-left:3px solid transparent;white-space:nowrap;">
           <span class="material-symbols-outlined folder-icon" style="font-size:16px;color:#7B9DC8;flex-shrink:0;">archive</span>
           <span class="folder-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">Arşiv</span>
           ${selectedFolder === "Archive" ? `<span class="folder-count">${escapeHtml(total)}</span>` : ""}
@@ -487,6 +573,8 @@ function renderPage({
           <button class="ribbon-btn ribbon-icon-only" title="Gönderimi zamanla"><span class="material-symbols-outlined" style="color:#0078D4">schedule_send</span></button>
           <div class="ribbon-sep"></div>
           <form method="GET" action="/" class="ribbon-folder-form" title="Klasör seç">
+            <input type="hidden" name="account" value="${escapeHtml(acc)}" />
+            ${qLink.length >= 2 ? `<input type="hidden" name="q" value="${escapeHtml(qLink)}" />` : ""}
             <span class="material-symbols-outlined" style="font-size:16px;color:#0078D4">folder_open</span>
             <select name="folder" onchange="this.form.submit()" class="ribbon-folder-select">${folderOptions}</select>
           </form>
@@ -503,6 +591,8 @@ function renderPage({
               <button class="list-tab">Diğer</button>
             </div>
             <div class="list-header-actions">
+              ${searchBadge}
+              ${clearSearchBlock}
               <button class="list-icon-btn" title="Filtrele"><span class="material-symbols-outlined">filter_list</span></button>
               <button class="list-icon-btn" title="Sırala"><span class="material-symbols-outlined">sort</span></button>
             </div>
@@ -527,6 +617,9 @@ function renderPage({
 
   </div>
   <script id="page-data" type="application/json">${pageData}</script>
+  <script>
+  try { window.pageData = JSON.parse(document.getElementById("page-data").textContent || "{}"); } catch (e) { window.pageData = {}; }
+  </script>
 
   <div id="mail-context-menu" class="context-menu" hidden>
     <button type="button" class="context-menu-item" data-menu-action="mark-unread">
@@ -564,9 +657,14 @@ function renderPage({
 </html>`;
 }
 
-function renderLoginPage({ error = "", next = "/", query = {} }) {
+function renderLoginPage({ error = "", next = "/", query = {}, addAccount = false }) {
   const safeNext = String(next || "/").trim() || "/";
   const nextValue = safeNext.startsWith("/") && !safeNext.startsWith("//") ? safeNext : "/";
+  const addHidden = addAccount ? '<input type="hidden" name="addAccount" value="1" />' : "";
+  const titleText = addAccount ? "Hesap ekle" : "Oturum açın";
+  const leadText = addAccount
+    ? "Başka bir posta kutusu ekleyin; mevcut oturumunuz korunur."
+    : "Rail Flow posta kutunuza uygulama (client credentials) ile bağlanın.";
   const errorBlock = error
     ? `<div class="ms-login-error" role="alert"><span class="material-symbols-outlined">error_outline</span><span>${escapeHtml(error)}</span></div>`
     : "";
@@ -589,23 +687,28 @@ function renderLoginPage({ error = "", next = "/", query = {} }) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Oturum açın</title>
+  <title>${escapeHtml(titleText)}</title>
+  <script>
+(function(){try{var m=localStorage.getItem("mac-theme");var d=document.documentElement;if(m==="dark"){d.setAttribute("data-theme","dark");return;}if(m==="light"){d.setAttribute("data-theme","light");return;}if(m==="system"||!m){d.setAttribute("data-theme",window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");}}catch(e){}})();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css" />
+  <script src="/theme-toggle.js" defer></script>
 </head>
 <body class="ms-login-page">
   <div class="ms-login-bg" aria-hidden="true"></div>
+  <button type="button" id="mac-theme-toggle" class="ms-theme-fab" title="Tema" aria-label="Tema"><span class="material-symbols-outlined">dark_mode</span></button>
   <main class="login-shell ms-login-shell">
     <div class="ms-login-card">
       <div class="ms-login-brand">
         <img src="https://www.rail-flow.com/wp-content/uploads/2020/12/Rail-Flow.svg" alt="Rail Flow" class="rf-logo" />
         <span class="rf-wordmark">Rail Flow</span>
       </div>
-      <h1 class="ms-login-title">Oturum açın</h1>
-      <p class="ms-login-lead">Rail Flow posta kutunuza uygulama (client credentials) ile bağlanın.</p>
+      <h1 class="ms-login-title">${escapeHtml(titleText)}</h1>
+      <p class="ms-login-lead">${escapeHtml(leadText)}</p>
       ${errorBlock}
       <div class="ms-csv-block" id="csv-block">
         <button type="button" class="ms-csv-toggle" id="csv-toggle-btn" aria-expanded="false" aria-controls="csv-content">
@@ -631,6 +734,7 @@ function renderLoginPage({ error = "", next = "/", query = {} }) {
       </div>
       <form id="ms-login-form" class="ms-login-form" method="post" action="/login" autocomplete="on">
         <input type="hidden" name="next" value="${escapeHtml(nextValue)}" />
+        ${addHidden}
         <label class="ms-field">
           <span class="ms-field-label">IMAP sunucusu</span>
           <input class="ms-field-input" name="endpoint" type="text" required placeholder="outlook.office365.com" value="${escapeHtml(prefillEndpoint)}" />

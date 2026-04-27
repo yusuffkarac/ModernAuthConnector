@@ -6,6 +6,16 @@
     return;
   }
 
+  let pageData = {};
+  try {
+    pageData = JSON.parse(document.getElementById("page-data")?.textContent || "{}");
+  } catch {
+    pageData = {};
+  }
+
+  const accountId = String(pageData.activeAccountId || "").trim();
+  const searchQ = String(pageData.searchQuery || "").trim();
+
   const setActiveMail = (targetItem) => {
     mailList.querySelectorAll("[data-mail-item='true']").forEach((item) => {
       item.classList.remove("active");
@@ -14,8 +24,21 @@
   };
 
   const buildUrl = (folder, uid) => {
-    const params = new URLSearchParams({ folder, uid });
-    return `/?${params.toString()}`;
+    const p = new URLSearchParams();
+    if (accountId) p.set("account", accountId);
+    if (folder) p.set("folder", folder);
+    if (uid) p.set("uid", uid);
+    if (searchQ.length >= 2) p.set("q", searchQ.slice(0, 120));
+    const s = p.toString();
+    return s ? `/?${s}` : "/";
+  };
+
+  const detailQuery = (folder, uid) => {
+    const p = new URLSearchParams();
+    if (accountId) p.set("account", accountId);
+    p.set("folder", folder);
+    p.set("uid", uid);
+    return p.toString();
   };
 
   const renderLoadingMarkup = () => {
@@ -54,9 +77,7 @@
     readingPane.innerHTML = renderLoadingMarkup();
     readingPane.setAttribute("aria-busy", "true");
     try {
-      const detailRes = await fetch(
-        `/api/messages/detail?folder=${encodeURIComponent(folder)}&uid=${encodeURIComponent(uid)}`
-      );
+      const detailRes = await fetch(`/api/messages/detail?${detailQuery(folder, uid)}`);
       const result = await detailRes.json();
 
       if (!detailRes.ok || !result.ok || typeof result.html !== "string") {
@@ -69,7 +90,7 @@
 
       if (pushHistory) {
         const url = buildUrl(folder, uid);
-        window.history.pushState({ folder, uid }, "", url);
+        window.history.pushState({ folder, uid, accountId }, "", url);
       }
     } catch (err) {
       console.error("[mail-navigation] Detail fetch failed:", err);

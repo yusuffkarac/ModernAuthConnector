@@ -9,20 +9,26 @@ const {
   getMailClientForRequest,
   clearMailClientForSessionId,
   verifyMailSettings,
+  migrateLegacyMailSession,
+  resolveActiveAccountId,
+  getMailAccounts,
+  hasMailSession,
+  addMailAccount,
+  removeMailAccount,
 } = require("./sessionMail");
 const { renderPage, renderDetailBlock, renderLoginPage } = require("./views/layout");
 const { normalizeAttachmentContentType } = require("./utils/mimeFromFilename");
 
 function saveSession(req) {
-  // cookie-session otomatik kaydeder, Promise wrapper compat icin
   return Promise.resolve();
 }
 
 function requireMailSession(req, res, next) {
-  if (!req.session?.mailSettings) {
-    const path = String(req.path || "");
+  migrateLegacyMailSession(req);
+  if (!hasMailSession(req)) {
+    const pathStr = String(req.path || "");
     const wantsJson =
-      path.startsWith("/api/") ||
+      pathStr.startsWith("/api/") ||
       String(req.get("Accept") || "").includes("application/json") ||
       String(req.get("X-Requested-With") || "") === "XMLHttpRequest";
     if (wantsJson) {
@@ -32,6 +38,11 @@ function requireMailSession(req, res, next) {
     return res.redirect(302, `/login?next=${nextUrl}`);
   }
   return next();
+}
+
+function resolveAccountForApi(req) {
+  const fromQuery = String(req.query?.account || req.body?.account || "").trim();
+  return resolveActiveAccountId(req, fromQuery);
 }
 
 async function bootstrap() {
@@ -64,7 +75,9 @@ async function bootstrap() {
   app.use(express.static(path.join(process.cwd(), "public")));
 
   app.get("/login", (req, res) => {
-    if (req.session?.mailSettings) {
+    migrateLegacyMailSession(req);
+    const addMode = String(req.query.add || "").trim() === "1";
+    if (hasMailSession(req) && !addMode) {
       const dest = String(req.query.next || "/").trim() || "/";
       const safe = dest.startsWith("/") && !dest.startsWith("//") ? dest : "/";
       return res.redirect(302, safe);
@@ -72,7 +85,6 @@ async function bootstrap() {
 
     const error = String(req.query.error || "").trim();
     const next = String(req.query.next || "/").trim() || "/";
-    // Form alanları için query parametrelerini topla
     const query = {
       endpoint: String(req.query.endpoint || "").trim(),
       username: String(req.query.username || "").trim(),
@@ -82,7 +94,7 @@ async function bootstrap() {
       clientSecret: String(req.query.clientSecret || "").trim(),
       autologin: String(req.query.autologin || "").trim(),
     };
-    return res.status(200).send(renderLoginPage({ error, next, query }));
+    return res.status(200).send(renderLoginPage({ error, next, query, addAccount: addMode }));
   });
 
   app.post("/login", async (req, res) => {
@@ -93,24 +105,50 @@ async function bootstrap() {
         error: verifyErr,
         next: String(req.body?.next || "/").trim() || "/",
       });
+      if (String(req.body?.addAccount || "").trim() === "1") {
+        q.set("add", "1");
+      }
       return res.redirect(302, `/login?${q.toString()}`);
     }
 
-    const sid = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    req.session.sid = sid;
-    clearMailClientForSessionId(sid);
-    req.session.mailSettings = settings;
+    migrateLegacyMailSession(req);
+    const addAccount = String(req.body?.addAccount || "").trim() === "1";
+
+    if (!req.session.sid) {
+      req.session.sid = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+    const sid = req.session.sid;
+
+    if (!hasMailSession(req)) {
+      clearMailClientForSessionId(sid);
+      req.session.mailAccounts = [];
+      req.session.activeAccountId = "";
+      addMailAccount(req, settings, { makeActive: true });
+    } else if (addAccount) {
+      addMailAccount(req, settings, { makeActive: true });
+    } else {
+      addMailAccount(req, settings, { makeActive: true });
+    }
 
     try {
       await saveSession(req);
     } catch (err) {
       console.error("[POST /login] Oturum kaydedilemedi:", err);
-      return res.status(500).send(renderLoginPage({ error: "Oturum kaydedilemedi.", next: "/" }));
+      return res.status(500).send(renderLoginPage({ error: "Oturum kaydedilemedi.", next: "/", addAccount: false }));
     }
 
     const dest = String(req.body?.next || "/").trim() || "/";
     const safe = dest.startsWith("/") && !dest.startsWith("//") ? dest : "/";
-    return res.redirect(302, safe);
+    const acc = resolveActiveAccountId(req, "");
+    let redirectUrl = safe;
+    try {
+      const u = new URL(safe, "http://localhost");
+      if (acc) u.searchParams.set("account", acc);
+      redirectUrl = u.pathname + u.search;
+    } catch {
+      redirectUrl = acc ? `/?account=${encodeURIComponent(acc)}` : "/";
+    }
+    return res.redirect(302, redirectUrl);
   });
 
   app.post("/logout", (req, res) => {
@@ -127,11 +165,39 @@ async function bootstrap() {
     });
   });
 
+  app.post("/accounts/:id/remove", requireMailSession, (req, res) => {
+    const id = String(req.params.id || "").trim();
+    const accounts = getMailAccounts(req);
+    if (accounts.length <= 1) {
+      return res.status(400).send("Son hesap kaldirilamaz. Cikis yapin.");
+    }
+    const ok = removeMailAccount(req, id);
+    if (!ok) {
+      return res.status(404).send("Hesap bulunamadi.");
+    }
+    const nextAcc = resolveActiveAccountId(req, "");
+    const dest = String(req.body?.next || "/").trim() || "/";
+    const safe = dest.startsWith("/") && !dest.startsWith("//") ? dest : "/";
+    let redirectUrl = safe;
+    try {
+      const u = new URL(safe, "http://localhost");
+      if (nextAcc) u.searchParams.set("account", nextAcc);
+      redirectUrl = u.pathname + u.search;
+    } catch {
+      redirectUrl = nextAcc ? `/?account=${encodeURIComponent(nextAcc)}` : "/";
+    }
+    return res.redirect(302, redirectUrl);
+  });
+
   app.get("/", requireMailSession, async (req, res) => {
-    const mailClient = getMailClientForRequest(req);
+    const accountId = resolveActiveAccountId(req, String(req.query.account || "").trim());
+    const mailClient = getMailClientForRequest(req, accountId);
     if (!mailClient) {
       return res.redirect(302, "/login");
     }
+
+    const rawQ = String(req.query.q || "").trim().slice(0, 120);
+    const searchQuery = rawQ.length >= 2 ? rawQ : "";
 
     const selectedFolderRaw = String(req.query.folder || "Done").trim();
     const selectedUidRaw = String(req.query.uid || req.query.mid || "").trim();
@@ -144,9 +210,11 @@ async function bootstrap() {
     let error = "";
     let folderNotFound = false;
     let selectedMessageUid = selectedUidRaw;
+    let searchActive = false;
+    let matchCount = 0;
 
     try {
-      const view = await mailClient.getMailboxView(selectedFolder, selectedMessageUid, 50);
+      const view = await mailClient.getMailboxView(selectedFolder, selectedMessageUid, 50, searchQuery);
       folders = view.folders;
       selectedFolder = view.selectedFolder;
       folderNotFound = view.folderNotFound || false;
@@ -154,12 +222,15 @@ async function bootstrap() {
       messages = view.messages;
       selectedMessageUid = view.selectedMessageUid;
       detail = view.detail;
+      searchActive = Boolean(view.searchActive);
+      matchCount = Number(view.matchCount) || 0;
     } catch (err) {
       console.error("[GET /] Mailbox goruntuleme hatasi:", err);
       error = err instanceof Error ? err.message : "Bilinmeyen hata";
     }
 
-    const mailboxUsername = req.session.mailSettings?.username || "";
+    const active = getMailAccounts(req).find((a) => a.id === accountId);
+    const mailboxUsername = active?.settings?.username || "";
 
     res.status(200).send(
       renderPage({
@@ -172,12 +243,52 @@ async function bootstrap() {
         detail,
         error,
         mailboxUsername,
+        activeAccountId: accountId,
+        mailAccounts: getMailAccounts(req),
+        searchQuery: rawQ,
+        searchActive,
+        matchCount,
       })
     );
   });
 
+  app.get("/api/mailbox/list-json", requireMailSession, async (req, res) => {
+    const accountId = resolveAccountForApi(req);
+    const mailClient = getMailClientForRequest(req, accountId);
+    if (!mailClient) {
+      return res.status(401).json({ ok: false, error: "Oturum gerekli." });
+    }
+
+    const rawQ = String(req.query.q || "").trim().slice(0, 120);
+    const searchQuery = rawQ.length >= 2 ? rawQ : "";
+    const selectedFolderRaw = String(req.query.folder || "Done").trim();
+    const selectedUidRaw = String(req.query.uid || "").trim();
+
+    try {
+      const view = await mailClient.getMailboxView(selectedFolderRaw, selectedUidRaw, 50, searchQuery);
+      return res.status(200).json({
+        ok: true,
+        accountId,
+        folders: view.folders,
+        selectedFolder: view.selectedFolder,
+        folderNotFound: view.folderNotFound || false,
+        total: view.total,
+        messages: view.messages,
+        selectedMessageUid: view.selectedMessageUid,
+        searchActive: Boolean(view.searchActive),
+        searchQuery: view.searchQuery || "",
+        matchCount: Number(view.matchCount) || 0,
+      });
+    } catch (err) {
+      console.error("[GET /api/mailbox/list-json]", err);
+      const message = err instanceof Error ? err.message : "Liste alinamadi.";
+      return res.status(400).json({ ok: false, error: message });
+    }
+  });
+
   app.post("/api/messages/action", requireMailSession, async (req, res) => {
-    const mailClient = getMailClientForRequest(req);
+    const accountId = resolveAccountForApi(req);
+    const mailClient = getMailClientForRequest(req, accountId);
     if (!mailClient) {
       return res.status(401).json({ ok: false, error: "Oturum gerekli." });
     }
@@ -212,7 +323,8 @@ async function bootstrap() {
   });
 
   app.get("/api/messages/detail", requireMailSession, async (req, res) => {
-    const mailClient = getMailClientForRequest(req);
+    const accountId = resolveAccountForApi(req);
+    const mailClient = getMailClientForRequest(req, accountId);
     if (!mailClient) {
       return res.status(401).json({ ok: false, error: "Oturum gerekli." });
     }
@@ -226,7 +338,7 @@ async function bootstrap() {
 
     try {
       const detail = await mailClient.getMessageDetailByUid(folder, uid);
-      const html = renderDetailBlock(detail, folder);
+      const html = renderDetailBlock(detail, folder, accountId);
       return res.status(200).json({ ok: true, html });
     } catch (err) {
       console.error(`[GET /api/messages/detail] folder=${folder} uid=${uid} — Hata:`, err);
@@ -236,7 +348,8 @@ async function bootstrap() {
   });
 
   app.get("/api/messages/attachment", requireMailSession, async (req, res) => {
-    const mailClient = getMailClientForRequest(req);
+    const accountId = resolveAccountForApi(req);
+    const mailClient = getMailClientForRequest(req, accountId);
     if (!mailClient) {
       return res.status(401).json({ ok: false, error: "Oturum gerekli." });
     }
@@ -277,7 +390,7 @@ async function bootstrap() {
 
   app.listen(port, host, () => {
     console.log(`Acildi: http://${host}:${port}`);
-    console.log("Giris: /login — Tum veriler sifreli cookie'de saklaniyor (sunucu restart edilse bile oturum korunur).");
+    console.log("Giris: /login — Oturum dosya deposunda (session-file-store).");
   });
 }
 

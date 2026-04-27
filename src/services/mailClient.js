@@ -434,7 +434,12 @@ class MailClientService {
     });
   }
 
-  async getMailboxView(folder, selectedMessageUid, limit = 50) {
+  async getMailboxView(folder, selectedMessageUid, limit = 50, searchQuery = "") {
+    const rawQ = String(searchQuery || "")
+      .trim()
+      .slice(0, 120);
+    const searchActive = rawQ.length >= 2;
+
     return this.withClient(async (client) => {
       const folders = await this._fetchFolders(client);
 
@@ -450,7 +455,41 @@ class MailClientService {
         const exists = client.mailbox.exists || 0;
         const messages = [];
 
-        if (exists > 0) {
+        if (searchActive) {
+          let uids = [];
+          try {
+            uids = await client.search(
+              { or: [{ subject: rawQ }, { from: rawQ }, { text: rawQ }] },
+              { uid: true }
+            );
+          } catch (searchErr) {
+            console.warn("[getMailboxView] Genis arama basarisiz, dar kriter:", searchErr);
+            uids = await client.search({ or: [{ subject: rawQ }, { from: rawQ }] }, { uid: true });
+          }
+
+          const sorted = Array.from(new Set((uids || []).map((u) => Number(u))))
+            .filter((n) => Number.isFinite(n) && n > 0)
+            .sort((a, b) => b - a)
+            .slice(0, limit);
+
+          for (const uidNum of sorted) {
+            const msg = await client.fetchOne(
+              uidNum,
+              { uid: true, envelope: true, flags: true },
+              { uid: true }
+            );
+            if (msg) {
+              messages.push({
+                id: String(msg.seq || ""),
+                uid: String(msg.uid || uidNum),
+                date: formatMailDate(msg.envelope?.date),
+                from: msg.envelope?.from?.[0]?.address || "-",
+                subject: msg.envelope?.subject || "-",
+                flags: formatFlags(msg.flags),
+              });
+            }
+          }
+        } else if (exists > 0) {
           const start = Math.max(1, exists - limit + 1);
           for await (const msg of client.fetch(
             `${start}:${exists}`,
@@ -478,7 +517,6 @@ class MailClientService {
         if (chosenUid && messages.some((m) => m.uid === chosenUid)) {
           const uid = Number.parseInt(chosenUid, 10);
 
-          // bodyStructure ile önce yapıyı çek, sonra sadece text/html part'larını indir
           const structMsg = await client.fetchOne(
             uid,
             { envelope: true, flags: true, bodyStructure: true },
@@ -510,6 +548,9 @@ class MailClientService {
           messages,
           selectedMessageUid: chosenUid || "",
           detail,
+          searchActive,
+          searchQuery: searchActive ? rawQ : "",
+          matchCount: searchActive ? messages.length : 0,
         };
       } finally {
         lock.release();

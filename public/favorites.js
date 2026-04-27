@@ -2,6 +2,17 @@
   const STORAGE_KEY = "rf_favorite_folders";
   const ORDER_KEY = "rf_folder_order";
 
+  function mailFolderHref(folder) {
+    const pd = window.pageData || {};
+    const p = new URLSearchParams();
+    if (pd.activeAccountId) p.set("account", pd.activeAccountId);
+    p.set("folder", folder);
+    const q = String(pd.searchQuery || "").trim();
+    if (q.length >= 2) p.set("q", q.slice(0, 120));
+    const s = p.toString();
+    return s ? `/?${s}` : "/";
+  }
+
   function getFavorites() {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
@@ -163,7 +174,7 @@
         const icon = folderIcon(folder);
         return `
           <div class="folder-item-wrapper${isActive ? " active" : ""}" data-folder="${escapeHtml(folder)}">
-            <a class="folder-item${isActive ? " active" : ""}" href="/?folder=${encodeURIComponent(folder)}" style="display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;padding:8px 14px 8px 16px;text-decoration:none;color:inherit;border-radius:4px;margin:1px 6px;border-left:3px solid transparent;white-space:nowrap;">
+            <a class="folder-item${isActive ? " active" : ""}" href="${mailFolderHref(folder)}" style="display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;padding:8px 14px 8px 16px;text-decoration:none;color:inherit;border-radius:4px;margin:1px 6px;border-left:3px solid transparent;white-space:nowrap;">
               <span class="material-symbols-outlined folder-icon" style="font-size:16px;color:#7B9DC8;flex-shrink:0;">${icon}</span>
               <span class="folder-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">${escapeHtml(folder)}</span>
             </a>
@@ -285,7 +296,7 @@
       const isFav = isFavorite(folder);
       
       return `<div class="folder-item-wrapper${isActive ? " active" : ""}" data-folder="${escapeHtml(folder)}">
-        <a class="folder-item${isActive ? " active" : ""}" href="/?folder=${encodeURIComponent(folder)}">
+        <a class="folder-item${isActive ? " active" : ""}" href="${mailFolderHref(folder)}">
           <span class="material-symbols-outlined folder-icon">${icon}</span>
           <span class="folder-name">${escapeHtml(folder)}</span>
           ${count}

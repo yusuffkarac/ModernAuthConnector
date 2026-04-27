@@ -21,6 +21,7 @@
     return;
   }
   const folders = Array.isArray(pageData.folders) ? pageData.folders : [];
+  const activeAccountId = String(pageData.activeAccountId || "").trim();
 
   let selectedMail = null;
   let pendingAction = null;
@@ -111,6 +112,9 @@
       folder: selectedMail.folder,
       uid: selectedMail.uid,
     };
+    if (activeAccountId) {
+      payload.account = activeAccountId;
+    }
 
     if (pendingAction === "move") {
       payload.targetFolder = targetFolderSelect.value;
@@ -139,11 +143,12 @@
     }
   };
 
-  document.querySelectorAll("[data-mail-item='true']").forEach((mailItem) => {
-    mailItem.addEventListener("contextmenu", (event) => {
-      event.preventDefault();
-      openContextMenu(event, mailItem);
-    });
+  const mailListEl = document.querySelector(".mail-list");
+  document.addEventListener("contextmenu", (event) => {
+    const mailItem = event.target.closest("[data-mail-item='true']");
+    if (!mailItem || (mailListEl && !mailListEl.contains(mailItem))) return;
+    event.preventDefault();
+    openContextMenu(event, mailItem);
   });
 
   contextMenu.querySelectorAll("[data-menu-action]").forEach((button) => {
