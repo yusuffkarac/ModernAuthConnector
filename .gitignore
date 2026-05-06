@@ -3,3 +3,4 @@ node_modules
 sessions
 *.session
 .DS_Store
+*.csv
