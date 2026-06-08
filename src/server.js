@@ -388,8 +388,11 @@ async function bootstrap() {
     }
   });
 
-  app.listen(port, host, () => {
-    console.log(`Acildi: http://${host}:${port}`);
+  const listenArgs = host ? [port, host] : [port];
+  const displayHost = host || "localhost";
+
+  app.listen(...listenArgs, () => {
+    console.log(`Acildi: http://${displayHost}:${port}`);
     console.log("Giris: /login — Oturum dosya deposunda (session-file-store).");
   });
 }

@@ -1,5 +1,5 @@
 module.exports = {
-  host: "127.0.0.1",
+  host: process.env.HOST || "",
   port: 8765,
   /** Oturum imzalama anahtarı — üretimde mutlaka ortam değişkeni verin. */
   sessionSecret: process.env.SESSION_SECRET || "dev-only-change-me",
