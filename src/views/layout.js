@@ -196,6 +196,7 @@ function renderDetailBlock(detail, mailFolder = "", accountId = "") {
             <div class="detail-avatar" style="background:${detailColor.bg};color:${detailColor.text}">${escapeHtml(detailInitials)}</div>
             <div class="detail-meta-info">
               <div class="detail-from"><strong>Kimden:</strong> ${escapeHtml(detail.from)}</div>
+              <div class="detail-to"><strong>Kime:</strong> ${escapeHtml(detail.to || "-")}</div>
               <div class="detail-date-to">
                 <span><strong>Tarih:</strong> ${escapeHtml(detail.date)}</span>
                 <span class="detail-uid">UID: ${escapeHtml(String(detail.uid || "-"))} &bull; SEQ: ${escapeHtml(String(detail.id || "-"))}</span>

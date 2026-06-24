@@ -423,6 +423,7 @@ class MailClientService {
           id: String(seq),
           subject: envelope?.subject || "-",
           from: envelope?.from?.[0]?.address || "-",
+          to: (envelope?.to || []).map((a) => a.address).filter(Boolean).join(", ") || "-",
           date: formatMailDate(envelope?.date),
           flags: formatFlags(structMsg.flags),
           body,
